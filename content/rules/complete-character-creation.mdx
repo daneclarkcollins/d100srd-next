@@ -1,0 +1,163 @@
+---
+title: "Complete Character Creation"
+description: "The complete system for creating SagaBorn D100 characters"
+order: 0
+category: "core-rules"
+---
+
+# Complete Character Creation
+
+It is time to create your adventurer. The following is a system for developing them. This system creates reasonably competent characters, but who they are is up to you. You should have a blank character sheet handy and maybe another sheet of paper for notes.
+
+<CharacterBuilder />
+
+## Character Creation Steps
+
+These steps will lead you through the path to create a character:
+
+1. **Lifepath:** This is first because it allows you to figure out story elements with your hero. Knowing the hero's species, profession, and history will help inform the mechanical choices you will make later.
+
+2. **Characteristics:** Roll or assign your core attributes (STR, CON, SIZ, INT, ACU, DEX, SOC) using either random rolling or point-buy system.
+
+3. **Skills:** Based on your profession and characteristics, calculate your starting skill values.
+
+4. **Talents:** These extraordinary abilities allow you to customize your character even further. You start with **3 Talent points**.
+
+5. **Equipment:** You have starting equipment and gold based on your Profession.
+
+6. **Finishing Touches:** Appearance, personality, and more details.
+
+## Species, Biology, and Heritage
+
+The peoples of Atheles are many and varied. Those who currently reside in this world may have evolved here, traveled here from the stars, or were pulled by cosmic forces.
+
+**Species:** Those of the same species can procreate and share a common origin, though there is often great biological diversity within a species.
+
+**Biology:** Refers to the biological differences that exist within a given species.
+
+**Heritage:** Refers to the skills and knowledge passed down in a person's culture.
+
+## Species Lifepath
+
+Choose your species or let fate decide:
+
+<DiceRoller dice="1d10" label="Random Species" />
+
+| Roll 1d10 | Species |
+|-----------|---------|
+| 1-6 | **Terian:** Species born and evolved in Atheles |
+| 7-9 | **Fey:** Species originating from other worlds |
+| 10 | **Elven:** A specific species originating from another place |
+
+### Terian
+
+Terians include terans, dweran, and dworves, who originated on Atheles and have a close connection to the world.
+
+#### Teran Biology
+- **Lifespan:** 65 years
+- **Special Abilities:** None (adaptable)
+- **Description:** Terans thrive in almost all environments, but have no special abilities or genetics beyond that.
+
+#### Dworven Biology  
+- **Lifespan:** 150 years
+- **Special Abilities:** Dark Vision 60'
+- **Description:** The oldest people of Atheles, recently awakened from millennia of sleep.
+
+#### Dweran Biology
+- **Lifespan:** 85 years
+- **Special Abilities:** Dark Vision 30'
+- **Description:** The offspring between dworv and teran.
+
+### Fey
+
+Species originating from other worlds, pulled to Atheles by cosmic forces.
+
+#### Elfling Biology
+- **Lifespan:** 130 years
+- **Special Abilities:** Dark Vision 60', Iron Discomfort
+- **Description:** Small fey folk on their Calling.
+
+#### Feral Elfling Biology
+- **Lifespan:** 90 years  
+- **Special Abilities:** Dark Vision 60', Iron Harm (1d4/hour)
+- **Description:** Caught between worlds during the Disappearance.
+
+#### Faun Biology
+- **Lifespan:** 100 years
+- **Special Abilities:** Dark Vision 60', Iron Discomfort, Animal Friend
+- **Description:** Reclusive forest dwellers.
+
+#### Orog Biology
+- **Lifespan:** 150 years
+- **Special Abilities:** +1 AV (natural armor), Cold Sensitivity
+- **Description:** Slower in cold weather (below 40°F), halving movement. Almost always Large size.
+
+### Elven
+
+A specific species with conflicting origin myths.
+
+#### Elf Biology
+- **Lifespan:** 250 years
+- **Special Abilities:** Dark Vision 60', Iron Harm, Reduced Sleep (4 hours)
+- **Description:** Require little food or water, harmed by Cold Iron.
+
+## Size Categories
+
+| SIZ | Rating | Height | Weight (lbs.) | Modifier | Species |
+|-----|--------|---------|---------------|----------|---------|
+| 1 | Fine | 1-11 inches | 0-20 | +20% Hide, Stealth, Dodge | Fae |
+| 2-3 | Tiny | 1' – 2.9' | 5-30 | +15% Hide, Stealth, Dodge | Boggart, Miglin |
+| 4-6 | Small | 3' – 4.4' | 16-60 | +10% Hide, Stealth, Dodge | Elfling, Goblin |
+| 7-19 | Medium | 4.5' – 7' | 55-225 | Standard Size | Teran, Dworv, Dweran, Elf, Faun |
+| 20-25 | Large | 8' – 14' | 120-500 | -10% Hide, Stealth, Dodge | Ogre, Orog |
+| 26-30 | Huge | 15' – 19' | 250-800 | -15% Hide, Stealth, Dodge | Giant |
+
+## Characteristics
+
+### Rolling Characteristics
+
+Roll 3d6 for each characteristic:
+
+<DiceRoller dice="3d6" label="STR (Strength)" />
+<DiceRoller dice="3d6" label="CON (Constitution)" />  
+<DiceRoller dice="3d6" label="INT (Intelligence)" />
+<DiceRoller dice="3d6" label="ACU (Acuity)" />
+<DiceRoller dice="3d6" label="DEX (Dexterity)" />
+<DiceRoller dice="3d6" label="SOC (Social)" />
+
+**SIZ (Size)** is rolled differently based on your biology - see the character builder for specific dice.
+
+### Point-Buy System (Optional)
+
+Instead of rolling, you can use the point-buy system:
+
+- All characteristics (STR, CON, INT, ACU, DEX, SOC) begin at 10
+- You have **24 points to spend** on characteristics  
+- No initial characteristic can be raised higher than 19
+- Different characteristics have different costs:
+  - **Expensive** (DEX, INT, ACU): 1 point up to 13, 3 points 14-16, 4 points 17+
+  - **Standard** (STR, CON, SOC): 1 point up to 15, 2 points 16+
+
+## Derived Statistics
+
+Based on your characteristics, calculate these derived values:
+
+- **Effort:** STR × 5
+- **Stamina:** CON × 5  
+- **Intellect:** INT × 5
+- **Spirit:** ACU × 5
+- **Agility:** DEX × 5
+- **Charm:** SOC × 5
+- **Hit Points:** (CON + SIZ) ÷ 2 (rounded up)
+- **Spirit Points:** ACU × 5
+- **Movement Speed:** Based on SIZ and species
+
+## Next Steps
+
+Continue character creation by:
+
+1. Selecting your **Profession** (determines skills and starting equipment)
+2. Choosing your **Talents** (3 talent points to start)
+3. Calculating **Skills** based on characteristics and profession
+4. Determining **Starting Equipment** and funds
+5. Adding **Finishing Touches** (appearance, personality, background)

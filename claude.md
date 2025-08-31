@@ -1,14 +1,14 @@
 # SagaBorn D100 SRD Development Log
 
 ## Project Overview
-This is the official System Reference Document (SRD) site for SagaBorn D100, a fantasy tabletop RPG system. The site is built with Next.js 14, TypeScript, Tailwind CSS, and MDX for content management.
+This is the official System Reference Document (SRD) site for SagaBorn D100, a fantasy tabletop RPG system. The site is built with Next.js 15, TypeScript, Tailwind CSS, and MDX for content management.
 
 **Repository**: https://github.com/daneclarkcollins/d100srd-next.git
-**Local Development**: http://localhost:3000
+**Local Development**: http://localhost:3001
 
-## Current Status ✅
+## Development Status
 
-### Phase 1: Basic Site Structure (COMPLETED)
+### Phase 1: Basic Site Structure ✅ COMPLETED
 
 #### ✅ Clean Homepage
 - Removed default Next.js boilerplate content
@@ -50,9 +50,21 @@ app/
   layout.tsx           ✅ Main layout with navigation & footer
   page.tsx            ✅ Dark fantasy homepage
   rules/
-    page.tsx          ✅ Rules index listing
-    [slug]/
-      page.tsx        ✅ Dynamic rule pages with MDX
+    page.tsx          ✅ Rules index listing  
+    [slug]/page.tsx   ✅ Dynamic rule pages with MDX
+  classes/
+    page.tsx          ✅ Classes index
+    [slug]/page.tsx   ✅ Dynamic class pages
+  equipment/
+    page.tsx          ✅ Equipment index
+    [slug]/page.tsx   ✅ Dynamic equipment pages
+  spells/
+    page.tsx          ✅ Spells index
+    [slug]/page.tsx   ✅ Dynamic spell pages
+  tools/
+    page.tsx          ✅ Interactive tools roadmap
+    character-builder/
+      page.tsx        ✅ Character creation system
   globals.css         ✅ Enhanced typography & game styling
 
 components/
@@ -60,43 +72,63 @@ components/
     Navigation.tsx    ✅ Responsive nav with mobile menu
   DiceRoller/
     DiceRoller.tsx    ✅ Interactive dice rolling component
+  CharacterBuilder/
+    CharacterBuilder.tsx    ✅ MDX component for character builder link
+    SpeciesSelection.tsx    ✅ Interactive species selection step
 
 content/
   rules/
-    character-creation.mdx  ✅ Sample content
-    combat.mdx             ✅ Sample content
+    character-creation.mdx  ✅ Sample content with CharacterBuilder
+    combat.mdx             ✅ Sample content with DiceRoller
+  classes/              📁 Ready for class content
+  equipment/            📁 Ready for equipment content  
+  spells/               📁 Ready for spell content
 
 lib/
-  markdown.ts         ✅ Content loading utilities
+  markdown.ts           ✅ Content loading utilities
+  character-data.ts     ✅ Character creation data structures
 ```
 
-## Next Steps (Phase 2: Content & Interactive Components)
+### Phase 2: Content Sections & Character Builder ✅ COMPLETED
 
-### Immediate Tasks
-1. **Create remaining section pages**
-   - `/classes/page.tsx` and `/classes/[slug]/page.tsx`
-   - `/equipment/page.tsx` and `/equipment/[slug]/page.tsx` 
-   - `/spells/page.tsx` and `/spells/[slug]/page.tsx`
-   - `/tools/page.tsx` for tools index
+#### ✅ All Content Sections Created
+- **Classes Section**: Complete with `/classes` index and dynamic `/classes/[slug]` pages
+- **Equipment Section**: Complete with `/equipment` index and dynamic `/equipment/[slug]` pages  
+- **Spells Section**: Complete with `/spells` index and dynamic `/spells/[slug]` pages
+- **Tools Index**: Interactive `/tools` page with tool roadmap and status indicators
 
-2. **Character Builder Foundation**
-   - Create `/tools/character-builder/page.tsx`
-   - Port basic functionality from `reference/Char_Gen_skills.html`
-   - Implement species selection component
-   - Add localStorage for progress saving
+#### ✅ Character Builder Foundation
+- **Species Selection System**: Interactive step with roll d10 or manual choice
+- **Character Data Structures**: Full TypeScript interfaces ported from reference
+- **Progress Tracking**: Visual progress bar and multi-step navigation
+- **Character Persistence**: localStorage save/load with character summary panel
+- **Species Flow Logic**: Handles Terian → Biology → Culture progression
 
-3. **Enhanced MDX Components**
-   - CharacterStatBlock component
-   - SpellCard component
-   - SkillCheck component
-   - Equipment table component
+#### ✅ Enhanced MDX Integration  
+- **CharacterBuilder Component**: Embedded link component for MDX content
+- **DiceRoller Component**: Interactive dice rolling available in all content
+- **Next.js 15 Compatibility**: Fixed async params and build system
 
-### Technical Improvements
-- Add loading states and error boundaries
-- Implement search functionality
-- Add print-friendly CSS styles
-- Optimize images and fonts
-- Add more comprehensive TypeScript types
+## Next Steps (Phase 3: Advanced Character Builder)
+
+### Immediate Priorities
+1. **Complete Character Creation Steps**
+   - Implement characteristic rolling/point-buy system
+   - Add culture and heritage selection with modifiers
+   - Calculate derived statistics automatically
+   - Add age and physical characteristic generation
+
+2. **Character Sheet Features**
+   - Export character to PDF/print format
+   - Import/export character JSON files
+   - Character comparison tool
+   - Random character generator
+
+3. **Interactive Game Components**
+   - CharacterStatBlock for displaying NPCs in content
+   - SpellCard component with casting requirements
+   - SkillCheck calculator with difficulty modifiers  
+   - Equipment browser with filtering and search
 
 ## Design Guidelines Applied
 - **Dark Fantasy Theme**: Slate-950 backgrounds, blue accents (#3b82f6), high contrast
@@ -106,14 +138,15 @@ lib/
 - **Accessible**: Proper ARIA labels, keyboard navigation support
 
 ## Content Management
-- Mike can edit `.mdx` files in the `/content` directory
-- Frontmatter supports: title, description, order, category
-- Components available in MDX: DiceRoller, (more coming)
-- Content automatically rebuilds on file changes
+- **Mike can edit**: `.mdx` files in the `/content` directory (rules, classes, equipment, spells)
+- **Frontmatter support**: title, description, order, category for organization
+- **Interactive Components**: DiceRoller, CharacterBuilder available in all MDX content
+- **Auto-rebuild**: Content changes trigger automatic site rebuilds
+- **Content Status**: All sections ready for content - classes, equipment, and spells show "coming soon" messaging until content is added
 
 ## Commands
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 
-Last Updated: August 31, 2024
+**Last Updated**: August 31, 2024 - Phase 2 Complete

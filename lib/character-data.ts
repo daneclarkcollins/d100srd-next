@@ -64,14 +64,14 @@ export const terianBiologyTable: SpeciesChoice[] = [
   { 
     range: [1, 7], 
     result: 'Teran', 
-    description: 'The most common biology in Atheles', 
+    description: 'The most common biology in Atheles. Terans thrive in almost all environments, but have no special abilities or genetics beyond that.', 
     nextTable: 'teranCulture',
     stats: { lifespan: 65, height: "5' 8\"", weight: "180 lb", speed: 30 }
   },
   { 
     range: [8, 9], 
     result: 'Dworven', 
-    description: 'The oldest people of Atheles', 
+    description: 'The oldest people of Atheles, recently awakened from millennia of sleep.', 
     nextTable: 'dworvenCulture',
     stats: { lifespan: 150, height: "4' 5\"", weight: "195 lb", speed: 20 }, 
     abilities: ['Dark Vision 60\''] 
@@ -79,9 +79,10 @@ export const terianBiologyTable: SpeciesChoice[] = [
   { 
     range: [10, 10], 
     result: 'Dweran', 
-    description: 'A person of both Teran and Dworven descent', 
+    description: 'A person of both Teran and Dworven descent.', 
     nextTable: 'dweranCulture',
-    stats: { lifespan: 90, height: "5' 2\"", weight: "185 lb", speed: 25 }
+    stats: { lifespan: 85, height: "5' 2\"", weight: "185 lb", speed: 25 },
+    abilities: ['Dark Vision 30\'']
   }
 ];
 
@@ -89,7 +90,7 @@ export const feyBiologyTable: SpeciesChoice[] = [
   { 
     range: [1, 6], 
     result: 'Elfling', 
-    description: 'Small fey folk on their Calling', 
+    description: 'Small fey folk on their Calling. Harmed by Cold Iron, while steel causes discomfort.', 
     nextTable: 'elflingCulture',
     stats: { lifespan: 130, height: "3'", weight: "65 lb", speed: 20 }, 
     abilities: ['Dark Vision 60\'', 'Iron Discomfort'] 
@@ -97,7 +98,7 @@ export const feyBiologyTable: SpeciesChoice[] = [
   { 
     range: [7, 8], 
     result: 'Feral Elfling', 
-    description: 'Caught between worlds during Disappearance', 
+    description: 'Caught between worlds during the Disappearance. Harmed by Cold Iron, while steel causes discomfort.', 
     nextTable: 'feralElflingCulture',
     stats: { lifespan: 90, height: "3'", weight: "65 lb", speed: 20 }, 
     abilities: ['Dark Vision 60\'', 'Iron Harm (1d4/hour)'] 
@@ -105,27 +106,57 @@ export const feyBiologyTable: SpeciesChoice[] = [
   { 
     range: [9, 9], 
     result: 'Faun', 
-    description: 'Reclusive forest dwellers', 
+    description: 'Reclusive forest dwellers. Harmed by Cold Iron, while steel causes discomfort.', 
     nextTable: 'faunCulture',
-    stats: { lifespan: 120, height: "5' 5\"", weight: "160 lb", speed: 30 }, 
+    stats: { lifespan: 100, height: "5' 5\"", weight: "160 lb", speed: 30 }, 
     abilities: ['Dark Vision 60\'', 'Animal Friend'] 
   },
   { 
     range: [10, 10], 
     result: 'Orog', 
-    description: 'Powerful warriors from the Wastes', 
+    description: 'Slower in cold weather (below 40°F), halving movement. +1 AV due to shell and thick skin. Almost always Large size.', 
     nextTable: 'orogCulture',
-    stats: { lifespan: 40, height: "7' 2\"", weight: "350 lb", speed: 30 }, 
-    abilities: ['Dark Vision 60\''] 
+    stats: { lifespan: 150, height: "7' 2\"", weight: "350 lb", speed: 30 }, 
+    abilities: ['Dark Vision 60\'', '+1 Natural Armor', 'Cold Sensitivity'] 
   }
 ];
 
 export const elvenCultureTable: SpeciesChoice[] = [
-  { range: [1, 1], result: 'Losvari', description: 'The lost elves who fought in the Great War.' },
-  { range: [2, 2], result: 'Anavari', description: 'The wilde elves of the bushlands.' },
-  { range: [3, 3], result: 'Kaelvari', description: 'The western wood elves.' },
-  { range: [4, 4], result: 'Alostrovari', description: 'The sea elves.' },
-  { range: [5, 5], result: 'Evantari', description: 'The high elves who believe themselves superior.' }
+  { 
+    range: [1, 1], 
+    result: 'Losvari', 
+    description: 'The lost elves who fought in the Great War.',
+    stats: { lifespan: 250, height: "6'", weight: "150 lb", speed: 30 },
+    abilities: ['Dark Vision 60\'', 'Iron Harm', 'Reduced Sleep (4 hours)']
+  },
+  { 
+    range: [2, 2], 
+    result: 'Anavari', 
+    description: 'The wilde elves of the bushlands.',
+    stats: { lifespan: 250, height: "6'", weight: "150 lb", speed: 30 },
+    abilities: ['Dark Vision 60\'', 'Iron Harm', 'Reduced Sleep (4 hours)']
+  },
+  { 
+    range: [3, 3], 
+    result: 'Kaelvari', 
+    description: 'The western wood elves.',
+    stats: { lifespan: 250, height: "6'", weight: "150 lb", speed: 30 },
+    abilities: ['Dark Vision 60\'', 'Iron Harm', 'Reduced Sleep (4 hours)']
+  },
+  { 
+    range: [4, 4], 
+    result: 'Alostrovari', 
+    description: 'The sea elves.',
+    stats: { lifespan: 250, height: "6'", weight: "150 lb", speed: 30 },
+    abilities: ['Dark Vision 60\'', 'Iron Harm', 'Reduced Sleep (4 hours)']
+  },
+  { 
+    range: [5, 5], 
+    result: 'Evantari', 
+    description: 'The high elves who believe themselves superior.',
+    stats: { lifespan: 250, height: "6'", weight: "150 lb", speed: 30 },
+    abilities: ['Dark Vision 60\'', 'Iron Harm', 'Reduced Sleep (4 hours)']
+  }
 ];
 
 export const createNewCharacter = (): Character => ({
