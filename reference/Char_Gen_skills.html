@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SagaBorn D100 Character Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+            .bg-gray-900 { background: white !important; }
+            .bg-slate-800 { background: white !important; border: 2px solid #333 !important; }
+            .text-blue-400 { color: #333 !important; }
+            .text-blue-300 { color: #333 !important; }
+            .text-gray-100 { color: #333 !important; }
+            .text-gray-300 { color: #666 !important; }
+            .border-blue-600 { border-color: #333 !important; }
+            .border-gray-600 { border-color: #ccc !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-900">
+    <div id="app" class="p-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="bg-slate-800 border-2 border-blue-600 rounded-lg p-6 mb-6 no-print">
+                <div class="flex justify-between items-center mb-4">
+                    <h1 class="text-3xl font-bold text-blue-400">SagaBorn D100 Character Creator</h1>
+                    <div class="flex gap-2">
+                        <button id="resetBtn" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Reset
+                        </button>
+                        <button id="printBtn" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            Print
+                        </button>
+                    </div>
+                </div>
+                <div id="stepTitle" class="text-lg text-blue-300">
+                    <strong>Step 1: Lifepath</strong> - Choose Your Species
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Main Content Area -->
+                <div class="lg:col-span-2 bg-slate-800 border-2 border-gray-600 rounded-lg p-6 no-print">
+                    <div id="mainContent">
+                        <!-- Content will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Character Sheet Preview -->
+                <div class="bg-slate-800 border-2 border-gray-600 rounded-lg p-6">
+                    <h2 class="text-xl font-bold text-blue-300 mb-4">Character Sheet</h2>
+                    <div id="characterSheet">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                                <input type="text" id="characterName" class="w-full border border-gray-600 rounded px-3 py-2 text-sm bg-gray-700 text-gray-100" placeholder="Enter character name">
+                            </div>
+                            <div class="border-t border-gray-600 pt-4">
+                                <h3 class="font-bold text-gray-100 mb-2">Background</h3>
+                                <div id="backgroundInfo" class="space-y-1 text-sm text-gray-300">
+                                    <div><strong>Species:</strong> <span id="species">—</span></div>
+                                    <div id="biologyRow" style="display: none;"><strong>Biology:</strong> <span id="biology"></span></div>
+                                    <div><strong>Profession:</strong> <span id="profession">—</span></div>
+                                    <div><strong>Archetype:</strong> <span id="archetype">—</span></div>
+                                </div>
+                            </div>
+                            <div id="characteristicsSection" class="border-t border-gray-600 pt-4">
+                                <h3 class="font-bold text-gray-100 mb-2">Characteristics</h3>
+                                <div id="characteristicsGrid" class="grid grid-cols-2 gap-2 text-sm text-gray-300">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            <div id="derivedStatsSection" class="border-t border-gray-600 pt-4" style="display: none;">
+                                <h3 class="font-bold text-gray-100 mb-2">Derived Stats</h3>
+                                <div id="derivedStatsGrid" class="space-y-1 text-sm text-gray-300">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            <div id="skillsSection" class="border-t border-gray-600 pt-4" style="display: none;">
+                                <h3 class="font-bold text-gray-100 mb-2">Top Skills</h3>
+                                <div id="skillsList" class="space-y-1 text-sm text-gray-300">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Character state
+        let character = {
+            name: '',
+            species: null,
+            biology: null,
+            culture: null,
+            profession: null,
+            archetype: null,
+            characteristics: { STR: 0, CON: 0, SIZ: 0, INT: 0, ACU: 0, DEX: 0, SOC: 0 },
+            derivedStats: { effort: 0, stamina: 0, intellect: 0, spirit: 0, agility: 0, charm: 0, hitPoints: 0, spiritPoints: 0, damageModifier: 'None', experienceBonus: 0 },
+            skills: {},
+            lifespan: 65,
+            height: "5' 8\"",
+            weight: "180 lb",
+            speed: 30,
+            specialAbilities: [],
+            startingEquipment: [],
+            startingFunds: '',
+            currentStep: 'species'
+        };
+
+        let characteristicMethod = '';
+        let pointBuyPoints = 24;
+        let tempCharacteristics = { STR: 10, CON: 10, INT: 10, ACU: 10, DEX: 10, SOC: 10 };
+        let professionalSkillPoints = 250;
+        let personalSkillPoints = 0;
+        let skillMode = 'professional';
+
+        // Tables
+        const speciesTable = [
+            { range: [1, 6], result: 'Terian', description: 'Species born and evolved in Atheles', nextTable: 'terian' },
+            { range: [7, 9], result: 'Fey', description: 'Species originating from other worlds', nextTable: 'fey' },
+            { range: [10, 10], result: 'Elven', description: 'A specific species originating from another place', nextTable: 'elven' }
+        ];
+
+        const terianBiologyTable = [
+            { range: [1, 7], result: 'Teran', description: 'The most common biology in Atheles', 
+              stats: { lifespan: 65, height: "5' 8\"", weight: "180 lb", speed: 30 } },
+            { range: [8, 9], result: 'Dworven', description: 'The oldest people of Atheles',
+              stats: { lifespan: 150, height: "4' 5\"", weight: "195 lb", speed: 20 }, abilities: ['Dark Vision 60\''] },
+            { range: [10, 10], result: 'Dweran', description: 'A person of both Teran and Dworven descent',
+              stats: { lifespan: 85, height: "5' 3\"", weight: "225 lb", speed: 25 }, abilities: ['Dark Vision 30\''] }
+        ];
+
+        const feyBiologyTable = [
+            { range: [1, 6], result: 'Elfling', description: 'Small fey folk on their Calling',
+              stats: { lifespan: 130, height: "3'", weight: "65 lb", speed: 20 }, abilities: ['Dark Vision 60\'', 'Iron Discomfort'] },
+            { range: [7, 8], result: 'Feral Elfling', description: 'Caught between worlds during Disappearance',
+              stats: { lifespan: 90, height: "3'", weight: "65 lb", speed: 20 }, abilities: ['Dark Vision 60\'', 'Iron Harm (1d4/hour)'] },
+            { range: [9, 9], result: 'Faun', description: 'Reclusive forest dwellers',
+              stats: { lifespan: 100, height: "5' 6\"", weight: "155 lb", speed: 30 }, abilities: ['Dark Vision 60\'', 'Iron Discomfort'] },
+            { range: [10, 10], result: 'Orog', description: 'Large turtle-like people',
+              stats: { lifespan: 150, height: "7' 6\"", weight: "400 lb", speed: 30 }, abilities: ['Cold Sensitivity', '+1 AV Shell', 'Large Size'] }
+        ];
+
+        const elvenCultureTable = [
+            { range: [1, 2], result: 'Losvari', description: 'The lost elves who fought in the Great War.' },
+            { range: [3, 4], result: 'Anavari', description: 'The wilde elves of the bushlands.' },
+            { range: [5, 6], result: 'Kaelvari', description: 'The western wood elves.' },
+            { range: [7, 8], result: 'Alostrovari', description: 'The sea elves.' },
+            { range: [9, 9], result: 'Evantari', description: 'The high elves who believe themselves superior.' },
+            { range: [10, 10], result: 'Orovari', description: 'The dark elves from the cold North.' }
+        ];
+
+        const professionTable = [
+            { range: [1, 6], result: 'Crafter', rarity: 'Very Common', archetype: 'Expert', 
+              equipment: 'Basic clothing, tools of the trade', funds: '1d4 x 10 + 20 gp' },
+            { range: [7, 11], result: 'Hunter', rarity: 'Very Common', archetype: 'Expert',
+              equipment: 'Basic clothing, short bow, small weapon', funds: '1d4 x 5 + 5 gp' },
+            { range: [21, 30], result: 'Soldier', rarity: 'Very Common', archetype: 'Warrior',
+              equipment: 'Basic clothing, leather armor, medium weapon', funds: '1d4 x 10 + 10 gp' },
+            { range: [85, 89], result: 'Mage', rarity: 'Very Rare', archetype: 'Mage',
+              equipment: 'Basic clothing, journal, ink and quill, small weapon', funds: '1d4 x 10 + 10 gp' },
+            { range: [90, 100], result: 'Noble', rarity: 'Rare', archetype: 'Expert',
+              equipment: 'Fine clothing, signet ring, riding horse', funds: '2d6 x 100 gp' }
+        ];
+
+        const archetypeTable = [
+            { range: [1, 5], result: 'Warrior', rarity: 'Common', 
+              description: 'You may not be trained, but you have a strong arm and know how to defend yourself.' },
+            { range: [6, 9], result: 'Expert', rarity: 'Common',
+              description: 'You may be a craftsperson or a farmer; your abilities lie in skill.' },
+            { range: [10, 10], result: 'Mage', rarity: 'Rare',
+              description: 'A user of magic, rare and often mistrusted.' }
+        ];
+
+        // Skills system
+        const skillCategories = {
+            communication: {
+                characteristic: 'SOC',
+                skills: ['Bargain', 'Command', 'Disguise', 'Etiquette', 'Fast Talk', 'Perform', 'Persuade', 'Teach']
+            },
+            perception: {
+                characteristic: 'ACU', 
+                skills: ['Insight', 'Listen', 'Navigate', 'Research', 'Sense', 'Spot', 'Track']
+            },
+            dexterous: {
+                characteristic: 'DEX',
+                skills: ['Acrobatics', 'Art', 'Craft', 'Fine Manipulation', 'Hide', 'Repair', 'Sleight of Hand', 'Stealth']
+            },
+            mental: {
+                characteristic: 'INT',
+                skills: ['Appraise', 'First Aid', 'Gaming', 'Knowledge', 'Language', 'Medicine', 'Strategy', 'Spellcraft', 'Survival']
+            },
+            physical: {
+                characteristic: 'STR',
+                skills: ['Athletics', 'Climb', 'Drive', 'Jump', 'Pilot (Land)', 'Pilot (Sea)', 'Pilot (Air)', 'Ride', 'Swim', 'Throw']
+            },
+            combat: {
+                characteristic: 'DEX',
+                skills: ['Brawl', 'Bludgeon Weapons', 'Dodge', 'Grapple', 'Martial Arts', 'Piercing Weapons', 'Ranged Weapons', 'Shield', 'Siege Weapons', 'Slashing Weapons']
+            }
+        };
+
+        const skillBaseChances = {
+            'Bargain': 5, 'Command': 5, 'Disguise': 1, 'Etiquette': 5, 'Fast Talk': 5, 'Perform': 5, 'Persuade': 15, 'Teach': 10,
+            'Insight': 5, 'Listen': 25, 'Navigate': 10, 'Research': 25, 'Sense': 10, 'Spot': 25, 'Track': 10,
+            'Acrobatics': 0, 'Art': 5, 'Craft': 5, 'Fine Manipulation': 5, 'Hide': 10, 'Repair': 15, 'Sleight of Hand': 5, 'Stealth': 10,
+            'Appraise': 15, 'First Aid': 30, 'Gaming': 15, 'Knowledge': 5, 'Language': 0, 'Medicine': 5, 'Strategy': 1, 'Spellcraft': 0, 'Survival': 15,
+            'Athletics': 15, 'Climb': 40, 'Drive': 20, 'Jump': 25, 'Pilot (Land)': 5, 'Pilot (Sea)': 5, 'Pilot (Air)': 1, 'Ride': 5, 'Swim': 25, 'Throw': 25,
+            'Brawl': 25, 'Bludgeon Weapons': 20, 'Dodge': 0, 'Grapple': 25, 'Martial Arts': 1, 'Piercing Weapons': 20, 'Ranged Weapons': 25, 'Shield': 15, 'Siege Weapons': 10, 'Slashing Weapons': 15
+        };
+
+        const professionSkillMap = {
+            'Crafter': ['Appraise', 'Art', 'Bargain', 'Craft', 'Spot', 'Research', 'Fine Manipulation', 'Repair'],
+            'Hunter': ['Climb', 'Hide', 'Listen', 'Navigate', 'Spot', 'Stealth', 'Track', 'Piercing Weapons', 'Ranged Weapons', 'Ride'],
+            'Soldier': ['Brawl', 'Climb', 'Dodge', 'First Aid', 'Command', 'Grapple', 'Hide', 'Listen', 'Piercing Weapons', 'Ranged Weapons'],
+            'Mage': ['Fine Manipulation', 'Insight', 'Knowledge', 'Persuade', 'Research', 'Sense', 'Spellcraft', 'Appraise', 'Etiquette', 'Listen'],
+            'Noble': ['Bargain', 'Command', 'Drive', 'Etiquette', 'Strategy', 'Knowledge', 'Art', 'Craft']
+        };
+
+        // Utility functions
+        function rollDice(sides, count = 1) {
+            const rolls = [];
+            for (let i = 0; i < count; i++) {
+                rolls.push(Math.floor(Math.random() * sides) + 1);
+            }
+            return rolls;
+        }
+
+        function rollSIZ() {
+            if (!character.species) return 0;
+            
+            if (character.biology === 'Elfling' || character.biology === 'Feral Elfling') {
+                return rollDice(3)[0] + 3;
+            } else if (character.biology === 'Dworven') {
+                return rollDice(6, 2).reduce((a, b) => a + b, 4);
+            } else if (character.species === 'Elven' || character.biology === 'Teran' || character.biology === 'Faun' || character.biology === 'Dweran') {
+                return rollDice(6, 2).reduce((a, b) => a + b, 6);
+            } else if (character.biology === 'Orog') {
+                return rollDice(3)[0] + 19;
+            }
+            return rollDice(6, 2).reduce((a, b) => a + b, 6);
+        }
+
+        function calculatePointCost(stat, currentValue, targetValue) {
+            if (targetValue < 3 || targetValue > 19) return Infinity;
+            
+            let cost = 0;
+            const expensive = ['DEX', 'INT', 'ACU'].includes(stat);
+            
+            for (let i = Math.min(currentValue, targetValue); i < Math.max(currentValue, targetValue); i++) {
+                if (targetValue > currentValue) {
+                    if (expensive) {
+                        if (i < 13) cost += 1;
+                        else if (i < 16) cost += 3;
+                        else cost += 4;
+                    } else {
+                        if (i < 15) cost += 1;
+                        else cost += 2;
+                    }
+                } else {
+                    if (expensive) {
+                        if (i >= 17) cost -= 4;
+                        else if (i >= 14) cost -= 3;
+                        else cost -= 1;
+                    } else {
+                        if (i >= 16) cost -= 2;
+                        else cost -= 1;
+                    }
+                }
+            }
+            
+            return cost;
+        }
+
+        function updateDerivedStats(characteristics) {
+            const dmgMod = getDamageModifier(characteristics.STR + characteristics.SIZ);
+            
+            return {
+                effort: characteristics.STR * 5,
+                stamina: characteristics.CON * 5,
+                intellect: characteristics.INT * 5,
+                spirit: characteristics.ACU * 5,
+                agility: characteristics.DEX * 5,
+                charm: characteristics.SOC * 5,
+                hitPoints: characteristics.CON + characteristics.SIZ,
+                spiritPoints: characteristics.ACU,
+                damageModifier: dmgMod,
+                experienceBonus: Math.ceil(characteristics.INT / 2),
+                movementSpeed: character.speed || 25,
+                horrorResistance: characteristics.ACU * 5
+            };
+        }
+
+        function getDamageModifier(strPlusSiz) {
+            if (strPlusSiz <= 12) return '-2';
+            if (strPlusSiz <= 16) return '-1';
+            if (strPlusSiz <= 24) return 'None';
+            if (strPlusSiz <= 32) return '+1d4';
+            if (strPlusSiz <= 40) return '+1d6';
+            if (strPlusSiz <= 56) return '+2d6';
+            if (strPlusSiz <= 72) return '+3d6';
+            if (strPlusSiz <= 88) return '+4d6';
+            if (strPlusSiz <= 104) return '+5d6';
+            return '+6d6+';
+        }
+
+        function getSkillCategoryBonus(category) {
+            if (!character.characteristics) return 0;
+            const characteristic = skillCategories[category].characteristic;
+            const statValue = character.characteristics[characteristic];
+            return Math.ceil(statValue / 2) || 0;
+        }
+
+        function getSkillTotal(skillName) {
+            const baseChance = skillBaseChances[skillName] || 0;
+            let categoryBonus = 0;
+            
+            for (const [categoryName, categoryData] of Object.entries(skillCategories)) {
+                if (categoryData.skills.includes(skillName)) {
+                    categoryBonus = getSkillCategoryBonus(categoryName);
+                    break;
+                }
+            }
+            
+            const skillPoints = character.skills[skillName] || 0;
+            return baseChance + categoryBonus + skillPoints;
+        }
+
+        function getProfessionSkills() {
+            if (!character.profession) return [];
+            return professionSkillMap[character.profession] || [];
+        }
+
+        function getTableResult(table, roll) {
+            return table.find(entry => roll >= entry.range[0] && roll <= entry.range[1]);
+        }
+
+        function getCurrentTable() {
+            switch (character.currentStep) {
+                case 'species': return speciesTable;
+                case 'terian': return terianBiologyTable;
+                case 'fey': return feyBiologyTable;
+                case 'elven': return elvenCultureTable;
+                case 'profession': return professionTable;
+                case 'archetype': return archetypeTable;
+                default: return [];
+            }
+        }
+
+        function getStepTitle() {
+            switch (character.currentStep) {
+                case 'species': return 'Choose Your Species';
+                case 'terian': return 'Choose Your Terian Biology';
+                case 'fey': return 'Choose Your Fey Biology';
+                case 'elven': return 'Choose Your Elven Culture';
+                case 'profession': return 'Choose Your Profession';
+                case 'archetype': return 'Choose Your Archetype';
+                case 'characteristics': return 'Generate Characteristics';
+                case 'skills': return 'Assign Skills';
+                case 'complete': return 'Character Creation Complete';
+                default: return 'Character Creation';
+            }
+        }
+
+        function updateCharacterFromChoice(choice, step) {
+            switch (step) {
+                case 'species':
+                    character.species = choice.result;
+                    if (choice.stats) {
+                        character.lifespan = choice.stats.lifespan;
+                        character.height = choice.stats.height;
+                        character.weight = choice.stats.weight;
+                        character.speed = choice.stats.speed;
+                    }
+                    if (choice.abilities) {
+                        character.specialAbilities = [...choice.abilities];
+                    }
+                    if (choice.result === 'Elven') {
+                        character.specialAbilities = ['Dark Vision 60\'', 'Iron Harm (1d4/hour)', 'Little Food/Water', '4 Hours Sleep'];
+                        character.lifespan = 250;
+                        character.height = "6' 6\"";
+                        character.weight = "195 lb";
+                        character.speed = 30;
+                    }
+                    break;
+                case 'terian':
+                case 'fey':
+                    character.biology = choice.result;
+                    if (choice.stats) {
+                        character.lifespan = choice.stats.lifespan;
+                        character.height = choice.stats.height;
+                        character.weight = choice.stats.weight;
+                        character.speed = choice.stats.speed;
+                    }
+                    if (choice.abilities) {
+                        character.specialAbilities = [...choice.abilities];
+                    }
+                    break;
+                case 'elven':
+                    character.culture = choice.result;
+                    break;
+                case 'profession':
+                    character.profession = choice.result;
+                    if (choice.equipment) character.startingEquipment = choice.equipment.split(', ');
+                    if (choice.funds) character.startingFunds = choice.funds;
+                    break;
+                case 'archetype':
+                    character.archetype = choice.result;
+                    break;
+            }
+        }
+
+        function handleChoice(choice, step) {
+            updateCharacterFromChoice(choice, step);
+            
+            let nextStep = '';
+            if (choice.nextTable) {
+                nextStep = choice.nextTable;
+            } else {
+                switch (step) {
+                    case 'species':
+                        if (choice.result === 'Terian') nextStep = 'terian';
+                        else if (choice.result === 'Fey') nextStep = 'fey';
+                        else if (choice.result === 'Elven') nextStep = 'elven';
+                        break;
+                    case 'terian':
+                    case 'fey':
+                        nextStep = 'profession';
+                        break;
+                    case 'elven':
+                        nextStep = 'profession';
+                        break;
+                    case 'profession':
+                        nextStep = 'archetype';
+                        break;
+                    case 'archetype':
+                        nextStep = 'characteristics';
+                        break;
+                    case 'characteristics':
+                        nextStep = 'skills';
+                        break;
+                    case 'skills':
+                        nextStep = 'complete';
+                        break;
+                }
+            }
+            
+            character.currentStep = nextStep;
+            updateDisplay();
+        }
+
+        function rollForStep(table, step) {
+            const roll = step === 'profession' ? rollDice(100)[0] : rollDice(10)[0];
+            const result = getTableResult(table, roll);
+            if (result) {
+                handleChoice(result, step);
+            }
+        }
+
+        function renderTableOptions(table, step) {
+            const isRolling = step === 'profession';
+            
+            let html = '<div class="flex justify-between items-center mb-6">';
+            html += '<h2 class="text-xl font-bold text-blue-300">' + getStepTitle() + '</h2>';
+            html += '<button onclick="rollForCurrentStep()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">';
+            html += 'Roll 1d' + (isRolling ? '100' : '10');
+            html += '</button>';
+            html += '</div>';
+            
+            html += '<div class="space-y-3">';
+            table.forEach(function(option, index) {
+                html += '<div onclick="selectChoice(' + index + ')" class="border border-gray-600 rounded-lg p-4 hover:bg-slate-700 cursor-pointer transition-colors bg-gray-800">';
+                html += '<div class="flex justify-between items-start">';
+                html += '<div class="flex-1">';
+                html += '<div class="flex items-center gap-3 mb-2 flex-wrap">';
+                html += '<span class="text-sm font-mono bg-gray-700 text-gray-200 px-2 py-1 rounded">';
+                html += (option.range[0] === option.range[1] ? option.range[0] : option.range[0] + '-' + option.range[1]);
+                html += '</span>';
+                html += '<h3 class="font-bold text-blue-300">' + option.result + '</h3>';
+                if (option.rarity) {
+                    const rarityClass = option.rarity === 'Very Common' ? 'bg-green-800 text-green-200' :
+                                      option.rarity === 'Common' ? 'bg-blue-800 text-blue-200' :
+                                      option.rarity === 'Rare' ? 'bg-yellow-800 text-yellow-200' :
+                                      'bg-red-800 text-red-200';
+                    html += '<span class="text-xs px-2 py-1 rounded ' + rarityClass + '">' + option.rarity + '</span>';
+                }
+                if (option.archetype) {
+                    html += '<span class="text-xs bg-purple-800 text-purple-200 px-2 py-1 rounded">' + option.archetype + '</span>';
+                }
+                html += '</div>';
+                html += '<p class="text-gray-300 text-sm mb-2">' + option.description + '</p>';
+                if (option.equipment) {
+                    html += '<div class="text-xs text-gray-400 mb-1"><strong>Equipment:</strong> ' + option.equipment + '</div>';
+                }
+                if (option.funds) {
+                    html += '<div class="text-xs text-gray-400 mb-1"><strong>Starting Funds:</strong> ' + option.funds + '</div>';
+                }
+                html += '</div>';
+                html += '<span class="text-gray-500 ml-2">→</span>';
+                html += '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+            
+            return html;
+        }
+
+        function renderComplete() {
+            let html = '<div class="text-center">';
+            html += '<h2 class="text-2xl font-bold text-green-400 mb-4">Character Creation Complete!</h2>';
+            html += '<div class="bg-green-900 border border-green-600 rounded-lg p-4 mb-4">';
+            html += '<div class="text-left space-y-2 text-green-100">';
+            html += '<p><strong>Species:</strong> ' + character.species + '</p>';
+            if (character.biology) {
+                html += '<p><strong>Biology:</strong> ' + character.biology + '</p>';
+            }
+            html += '<p><strong>Profession:</strong> ' + character.profession + '</p>';
+            html += '<p><strong>Archetype:</strong> ' + character.archetype + '</p>';
+            html += '</div>';
+            html += '</div>';
+            html += '<p class="text-gray-300">Ready for adventure!</p>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderCharacteristics() {
+            if (!characteristicMethod) {
+                return '<div>' +
+                    '<h2 class="text-xl font-bold text-blue-300 mb-6">Choose Characteristic Generation Method</h2>' +
+                    '<div class="space-y-4">' +
+                    '<div onclick="setCharacteristicMethod(\'random\')" class="border border-gray-600 rounded-lg p-4 hover:bg-slate-700 cursor-pointer transition-colors bg-gray-800">' +
+                    '<h3 class="font-bold text-blue-300 mb-2">Random Roll Method</h3>' +
+                    '<p class="text-gray-300 text-sm mb-2">Roll 3d6 five times and assign results to characteristics. Roll 2d6+6 for INT. Roll species-specific dice for SIZ.</p>' +
+                    '<p class="text-yellow-300 text-sm">More unpredictable but exciting!</p>' +
+                    '</div>' +
+                    '<div onclick="setCharacteristicMethod(\'pointbuy\')" class="border border-gray-600 rounded-lg p-4 hover:bg-slate-700 cursor-pointer transition-colors bg-gray-800">' +
+                    '<h3 class="font-bold text-blue-300 mb-2">Point-Buy Method</h3>' +
+                    '<p class="text-gray-300 text-sm mb-2">Start with all stats at 10. Spend 24 points to raise characteristics. DEX, INT, and ACU cost more.</p>' +
+                    '<p class="text-green-300 text-sm">More control and customization!</p>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            } else if (characteristicMethod === 'random') {
+                let html = '<div>';
+                html += '<div class="flex justify-between items-center mb-4">';
+                html += '<h3 class="text-lg font-bold text-blue-300">Random Roll Results</h3>';
+                html += '<div class="flex gap-2">';
+                html += '<button onclick="rollAllStats()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Roll All Stats</button>';
+                html += '<button onclick="setCharacteristicMethod(\'\')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">Back</button>';
+                html += '</div>';
+                html += '</div>';
+                
+                if (character.characteristics.STR > 0) {
+                    html += '<div class="text-center">';
+                    html += '<button onclick="continueToSkills()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold">Continue to Skills</button>';
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                return html;
+            } else {
+                return renderPointBuy();
+            }
+        }
+
+        function renderPointBuy() {
+            let html = '<div>';
+            html += '<div class="flex justify-between items-center mb-4">';
+            html += '<h3 class="text-lg font-bold text-blue-300">Point-Buy System</h3>';
+            html += '<div class="flex items-center gap-4">';
+            html += '<span class="text-white">Points Remaining: ';
+            html += '<span class="' + (pointBuyPoints < 0 ? 'text-red-400' : 'text-green-400') + ' font-bold">' + pointBuyPoints + '</span>';
+            html += '</span>';
+            html += '<button onclick="setCharacteristicMethod(\'\')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">Back</button>';
+            html += '</div>';
+            html += '</div>';
+
+            html += '<div class="grid grid-cols-2 gap-4 mb-6">';
+            const stats = ['STR', 'CON', 'INT', 'ACU', 'DEX', 'SOC'];
+            stats.forEach(function(stat) {
+                const expensive = ['DEX', 'INT', 'ACU'].includes(stat);
+                const nextCost = tempCharacteristics[stat] < 19 ? 
+                    Math.abs(calculatePointCost(stat, tempCharacteristics[stat], tempCharacteristics[stat] + 1)) : 
+                    0;
+                
+                html += '<div class="bg-gray-800 border border-gray-600 rounded-lg p-3">';
+                html += '<div class="flex justify-between items-center mb-2">';
+                html += '<span class="font-bold text-blue-300">' + stat + '</span>';
+                html += '<span class="text-lg font-bold text-white">' + tempCharacteristics[stat] + '</span>';
+                html += '</div>';
+                
+                html += '<div class="flex items-center justify-between">';
+                html += '<button onclick="adjustStat(\'' + stat + '\', -1)" ';
+                if (tempCharacteristics[stat] <= 3) html += 'disabled ';
+                html += 'class="px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">-</button>';
+                
+                html += '<div class="text-center">';
+                html += '<div class="text-xs text-gray-400">' + (expensive ? 'Expensive' : 'Standard') + '</div>';
+                html += '<div class="text-xs text-gray-400">Next: ' + nextCost + 'pt</div>';
+                html += '</div>';
+                
+                html += '<button onclick="adjustStat(\'' + stat + '\', 1)" ';
+                if (tempCharacteristics[stat] >= 19 || 
+                    pointBuyPoints - calculatePointCost(stat, tempCharacteristics[stat], tempCharacteristics[stat] + 1) < 0) {
+                    html += 'disabled ';
+                }
+                html += 'class="px-2 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">+</button>';
+                html += '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+
+            if (pointBuyPoints === 0) {
+                html += '<div class="text-center">';
+                html += '<button onclick="finishPointBuy()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold">Roll SIZ & Continue to Skills</button>';
+                html += '</div>';
+            } else {
+                html += '<div class="text-center text-gray-400 text-sm">';
+                html += pointBuyPoints > 0 ? 'Spend all points to continue' : 'You have overspent! Reduce some characteristics.';
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderSkills() {
+            let html = '<div>';
+            html += '<div class="flex justify-between items-center mb-6">';
+            html += '<h2 class="text-xl font-bold text-blue-300">Assign Skill Points</h2>';
+            html += '<div class="flex gap-2">';
+            html += '<button onclick="setSkillMode(\'professional\')" class="px-4 py-2 rounded-lg transition-colors ' + 
+                    (skillMode === 'professional' ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300 hover:bg-gray-500') + 
+                    '">Professional (' + professionalSkillPoints + ' pts)</button>';
+            html += '<button onclick="setSkillMode(\'personal\')" class="px-4 py-2 rounded-lg transition-colors ' + 
+                    (skillMode === 'personal' ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300 hover:bg-gray-500') + 
+                    '">Personal (' + personalSkillPoints + ' pts)</button>';
+            html += '</div>';
+            html += '</div>';
+
+            if (skillMode === 'professional') {
+                html += renderProfessionalSkills();
+            } else {
+                html += renderPersonalSkills();
+            }
+
+            if (professionalSkillPoints === 0 && personalSkillPoints === 0) {
+                html += '<div class="text-center mt-6">';
+                html += '<button onclick="completeCharacter()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold">Complete Character</button>';
+                html += '</div>';
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderProfessionalSkills() {
+            const profSkills = getProfessionSkills();
+            
+            let html = '<div>';
+            html += '<div class="bg-blue-900 border border-blue-600 rounded-lg p-4 mb-4">';
+            html += '<h3 class="font-bold text-blue-200 mb-2">Professional Skills (' + character.profession + ')</h3>';
+            html += '<p class="text-blue-200 text-sm mb-2">Spend 250 points on your profession\'s key skills. Max 75% per skill.</p>';
+            html += '<p class="text-blue-200 text-xs">Points Remaining: <span class="font-bold">' + professionalSkillPoints + '</span></p>';
+            html += '</div>';
+
+            html += '<div class="grid grid-cols-2 gap-3">';
+            profSkills.forEach(function(skillName) {
+                const currentPoints = character.skills[skillName] || 0;
+                const totalSkill = getSkillTotal(skillName);
+                
+                html += '<div class="bg-gray-800 border border-gray-600 rounded-lg p-3">';
+                html += '<div class="flex justify-between items-center mb-2">';
+                html += '<span class="font-bold text-blue-300">' + skillName + '</span>';
+                html += '<span class="text-lg font-bold text-white">' + totalSkill + '%</span>';
+                html += '</div>';
+                
+                html += '<div class="flex items-center justify-between text-xs text-gray-400 mb-2">';
+                html += '<span>Base: ' + (skillBaseChances[skillName] || 0) + '</span>';
+                
+                let categoryName = '';
+                for (const [catName, categoryData] of Object.entries(skillCategories)) {
+                    if (categoryData.skills.includes(skillName)) {
+                        categoryName = catName;
+                        break;
+                    }
+                }
+                html += '<span>Bonus: +' + getSkillCategoryBonus(categoryName) + '</span>';
+                html += '<span>Added: ' + currentPoints + '</span>';
+                html += '</div>';
+                
+                html += '<div class="flex items-center justify-between">';
+                html += '<button onclick="adjustSkill(\'' + skillName + '\', -1, \'professional\')" ';
+                if (currentPoints <= 0) html += 'disabled ';
+                html += 'class="px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50">-</button>';
+                
+                html += '<span class="text-sm text-gray-300">+' + currentPoints + ' pts</span>';
+                
+                html += '<button onclick="adjustSkill(\'' + skillName + '\', 1, \'professional\')" ';
+                if (professionalSkillPoints <= 0 || totalSkill >= 75) html += 'disabled ';
+                html += 'class="px-2 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors disabled:opacity-50">+</button>';
+                html += '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+            html += '</div>';
+            
+            return html;
+        }
+
+        function renderPersonalSkills() {
+            let html = '<div>';
+            html += '<div class="bg-green-900 border border-green-600 rounded-lg p-4 mb-4">';
+            html += '<h3 class="font-bold text-green-200 mb-2">Personal Skills</h3>';
+            html += '<p class="text-green-200 text-sm mb-2">Spend INT×10 points on any skills. Max 75% per skill.</p>';
+            html += '<p class="text-green-200 text-xs">Points Remaining: <span class="font-bold">' + personalSkillPoints + '</span></p>';
+            html += '</div>';
+
+            html += '<div class="space-y-4">';
+            Object.entries(skillCategories).forEach(function([categoryName, categoryData]) {
+                html += '<div class="bg-gray-800 border border-gray-600 rounded-lg p-4">';
+                html += '<h3 class="font-bold text-blue-300 mb-3 capitalize">';
+                html += categoryName + ' Skills (' + categoryData.characteristic + '/2 = +' + getSkillCategoryBonus(categoryName) + ' bonus)';
+                html += '</h3>';
+                
+                html += '<div class="grid grid-cols-3 gap-2">';
+                categoryData.skills.forEach(function(skillName) {
+                    const currentPoints = character.skills[skillName] || 0;
+                    const totalSkill = getSkillTotal(skillName);
+                    const isProfessionSkill = getProfessionSkills().includes(skillName);
+                    
+                    html += '<div class="border rounded-lg p-2 ' + 
+                           (isProfessionSkill ? 'border-blue-400 bg-blue-900' : 'border-gray-600 bg-gray-700') + '">';
+                    html += '<div class="flex justify-between items-center mb-1">';
+                    html += '<span class="text-xs ' + (isProfessionSkill ? 'text-blue-200' : 'text-gray-300') + '">' + skillName + '</span>';
+                    html += '<span class="text-xs font-bold text-white">' + totalSkill + '%</span>';
+                    html += '</div>';
+                    
+                    html += '<div class="flex items-center justify-between">';
+                    html += '<button onclick="adjustSkill(\'' + skillName + '\', -1, \'personal\')" ';
+                    if (currentPoints <= 0) html += 'disabled ';
+                    html += 'class="px-1 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors disabled:opacity-50">-</button>';
+                    
+                    html += '<span class="text-xs text-gray-400">+' + currentPoints + '</span>';
+                    
+                    html += '<button onclick="adjustSkill(\'' + skillName + '\', 1, \'personal\')" ';
+                    if (personalSkillPoints <= 0 || totalSkill >= 75) html += 'disabled ';
+                    html += 'class="px-1 py-0.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors disabled:opacity-50">+</button>';
+                    html += '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+            html += '</div>';
+            
+            return html;
+        }
+
+        function updateDisplay() {
+            const mainContent = document.getElementById('mainContent');
+            const stepTitle = document.getElementById('stepTitle');
+            
+            // Update step title
+            const stepNumber = 
+                character.currentStep === 'profession' || character.currentStep === 'archetype' ? '2' : 
+                character.currentStep === 'characteristics' ? '3' : 
+                character.currentStep === 'skills' ? '4' : '1';
+            const stepCategory = 
+                character.currentStep === 'profession' || character.currentStep === 'archetype' ? 'Profession & Archetype' : 
+                character.currentStep === 'characteristics' ? 'Characteristics' : 
+                character.currentStep === 'skills' ? 'Skills' : 'Lifepath';
+            
+            stepTitle.innerHTML = '<strong>Step ' + stepNumber + ': ' + stepCategory + '</strong> - ' + getStepTitle();
+
+            if (character.currentStep === 'complete') {
+                mainContent.innerHTML = renderComplete();
+            } else if (character.currentStep === 'characteristics') {
+                mainContent.innerHTML = renderCharacteristics();
+            } else if (character.currentStep === 'skills') {
+                mainContent.innerHTML = renderSkills();
+            } else {
+                const currentTable = getCurrentTable();
+                mainContent.innerHTML = renderTableOptions(currentTable, character.currentStep);
+            }
+
+            updateCharacterSheet();
+        }
+
+        function updateCharacterSheet() {
+            document.getElementById('species').textContent = character.species || '—';
+            document.getElementById('profession').textContent = character.profession || '—';
+            document.getElementById('archetype').textContent = character.archetype || '—';
+            
+            const biologyRow = document.getElementById('biologyRow');
+            if (character.biology) {
+                document.getElementById('biology').textContent = character.biology;
+                biologyRow.style.display = 'block';
+            } else {
+                biologyRow.style.display = 'none';
+            }
+
+            // Update characteristics
+            const characteristicsGrid = document.getElementById('characteristicsGrid');
+            if (character.characteristics.STR > 0) {
+                characteristicsGrid.innerHTML = 
+                    '<div><strong>STR:</strong> ' + character.characteristics.STR + ' (' + character.derivedStats.effort + '%)</div>' +
+                    '<div><strong>CON:</strong> ' + character.characteristics.CON + ' (' + character.derivedStats.stamina + '%)</div>' +
+                    '<div><strong>SIZ:</strong> ' + character.characteristics.SIZ + '</div>' +
+                    '<div><strong>INT:</strong> ' + character.characteristics.INT + ' (' + character.derivedStats.intellect + '%)</div>' +
+                    '<div><strong>ACU:</strong> ' + character.characteristics.ACU + ' (' + character.derivedStats.spirit + '%)</div>' +
+                    '<div><strong>DEX:</strong> ' + character.characteristics.DEX + ' (' + character.derivedStats.agility + '%)</div>' +
+                    '<div><strong>SOC:</strong> ' + character.characteristics.SOC + ' (' + character.derivedStats.charm + '%)</div>';
+
+                // Show derived stats
+                const derivedStatsSection = document.getElementById('derivedStatsSection');
+                const derivedStatsGrid = document.getElementById('derivedStatsGrid');
+                derivedStatsSection.style.display = 'block';
+                derivedStatsGrid.innerHTML = 
+                    '<div><strong>Hit Points:</strong> ' + character.derivedStats.hitPoints + '</div>' +
+                    '<div><strong>Spirit Points:</strong> ' + character.derivedStats.spiritPoints + '</div>' +
+                    '<div><strong>Damage Modifier:</strong> ' + character.derivedStats.damageModifier + '</div>' +
+                    '<div><strong>Experience Bonus:</strong> ' + character.derivedStats.experienceBonus + '</div>';
+            } else {
+                characteristicsGrid.innerHTML = '';
+                document.getElementById('derivedStatsSection').style.display = 'none';
+            }
+
+            // Update skills
+            const skillsSection = document.getElementById('skillsSection');
+            const skillsList = document.getElementById('skillsList');
+            const skillEntries = Object.entries(character.skills).filter(function([name, points]) { return points > 0; });
+            
+            if (skillEntries.length > 0) {
+                skillsSection.style.display = 'block';
+                const topSkills = skillEntries
+                    .sort(function([,a], [,b]) { return getSkillTotal(b) - getSkillTotal(a); })
+                    .slice(0, 5);
+                
+                let skillsHTML = '';
+                topSkills.forEach(function([skillName, points]) {
+                    skillsHTML += '<div class="flex justify-between"><span>' + skillName + ':</span><span>' + getSkillTotal(skillName) + '%</span></div>';
+                });
+                skillsList.innerHTML = skillsHTML;
+            } else {
+                skillsSection.style.display = 'none';
+            }
+        }
+
+        // Interactive functions
+        function setCharacteristicMethod(method) {
+            characteristicMethod = method;
+            updateDisplay();
+        }
+
+        function rollAllStats() {
+            const newStats = {};
+            const statNames = ['STR', 'CON', 'INT', 'ACU', 'DEX', 'SOC'];
+            
+            statNames.forEach(function(stat) {
+                if (stat === 'INT') {
+                    const rolls = rollDice(6, 2);
+                    newStats[stat] = rolls.reduce(function(a, b) { return a + b; }, 6);
+                } else {
+                    const rolls = rollDice(6, 3);
+                    newStats[stat] = rolls.reduce(function(a, b) { return a + b; }, 0);
+                }
+            });
+            
+            newStats.SIZ = rollSIZ();
+            
+            character.characteristics = newStats;
+            character.derivedStats = updateDerivedStats(newStats);
+            personalSkillPoints = newStats.INT * 10;
+            
+            updateDisplay();
+        }
+
+        function adjustStat(stat, direction) {
+            const newValue = Math.max(3, Math.min(19, tempCharacteristics[stat] + direction));
+            const cost = calculatePointCost(stat, tempCharacteristics[stat], newValue);
+            const newPoints = pointBuyPoints - cost;
+            
+            if (newPoints >= 0) {
+                tempCharacteristics[stat] = newValue;
+                pointBuyPoints = newPoints;
+                updateDisplay();
+            }
+        }
+
+        function finishPointBuy() {
+            const roll = rollSIZ();
+            const finalStats = Object.assign({}, tempCharacteristics);
+            finalStats.SIZ = roll;
+            character.characteristics = finalStats;
+            character.derivedStats = updateDerivedStats(finalStats);
+            personalSkillPoints = finalStats.INT * 10;
+            character.currentStep = 'skills';
+            updateDisplay();
+        }
+
+        function continueToSkills() {
+            character.currentStep = 'skills';
+            updateDisplay();
+        }
+
+        function setSkillMode(mode) {
+            skillMode = mode;
+            updateDisplay();
+        }
+
+        function adjustSkill(skillName, direction, type) {
+            const currentPoints = character.skills[skillName] || 0;
+            const totalSkill = getSkillTotal(skillName);
+            
+            if (direction === -1 && currentPoints > 0) {
+                character.skills[skillName] = currentPoints - 1;
+                if (type === 'professional') {
+                    professionalSkillPoints += 1;
+                } else {
+                    personalSkillPoints += 1;
+                }
+            } else if (direction === 1) {
+                if ((type === 'professional' && professionalSkillPoints > 0) || 
+                    (type === 'personal' && personalSkillPoints > 0)) {
+                    if (totalSkill < 75) {
+                        character.skills[skillName] = currentPoints + 1;
+                        if (type === 'professional') {
+                            professionalSkillPoints -= 1;
+                        } else {
+                            personalSkillPoints -= 1;
+                        }
+                    }
+                }
+            }
+            
+            updateDisplay();
+        }
+
+        function completeCharacter() {
+            character.currentStep = 'complete';
+            updateDisplay();
+        }
+
+        function printCharacter() {
+            window.print();
+        }
+
+        function rollForCurrentStep() {
+            const currentTable = getCurrentTable();
+            rollForStep(currentTable, character.currentStep);
+        }
+
+        function selectChoice(index) {
+            const currentTable = getCurrentTable();
+            const choice = currentTable[index];
+            if (choice) {
+                handleChoice(choice, character.currentStep);
+            }
+        }
+
+        function resetCharacter() {
+            character = {
+                name: '',
+                species: null,
+                biology: null,
+                culture: null,
+                profession: null,
+                archetype: null,
+                characteristics: { STR: 0, CON: 0, SIZ: 0, INT: 0, ACU: 0, DEX: 0, SOC: 0 },
+                derivedStats: { effort: 0, stamina: 0, intellect: 0, spirit: 0, agility: 0, charm: 0, hitPoints: 0, spiritPoints: 0, damageModifier: 'None', experienceBonus: 0 },
+                skills: {},
+                lifespan: 65,
+                height: "5' 8\"",
+                weight: "180 lb",
+                speed: 30,
+                specialAbilities: [],
+                startingEquipment: [],
+                startingFunds: '',
+                currentStep: 'species'
+            };
+            characteristicMethod = '';
+            pointBuyPoints = 24;
+            tempCharacteristics = { STR: 10, CON: 10, INT: 10, ACU: 10, DEX: 10, SOC: 10 };
+            professionalSkillPoints = 250;
+            personalSkillPoints = 0;
+            skillMode = 'professional';
+            updateDisplay();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('resetBtn').addEventListener('click', resetCharacter);
+            document.getElementById('printBtn').addEventListener('click', printCharacter);
+            document.getElementById('characterName').addEventListener('input', function(e) {
+                character.name = e.target.value;
+            });
+            
+            // Initialize the app
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
