@@ -1,12 +1,21 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, Printer, ChevronLeft } from 'lucide-react';
 import { Character, SpeciesChoice, createNewCharacter } from '@/lib/character-data';
 import SpeciesSelection from '@/components/CharacterBuilder/SpeciesSelection';
+import SkillSelection from '@/components/CharacterBuilder/SkillSelection';
 
 export default function CharacterBuilderPage() {
   const [character, setCharacter] = useState<Character>(createNewCharacter());
+  const [characteristicMethod, setCharacteristicMethod] = useState<'roll' | 'pointbuy' | null>(null);
+  const [pointBuyStats, setPointBuyStats] = useState({
+    STR: 10, CON: 10, SIZ: 10, INT: 10, ACU: 10, DEX: 10, SOC: 10
+  });
+  const [availablePoints, setAvailablePoints] = useState(24);
+  const [characterMode, setCharacterMode] = useState<'normal' | 'advanced' | null>(null);
+
+  const isAdvancedMode = characterMode === 'advanced';
 
   useEffect(() => {
     const saved = localStorage.getItem('sagaborn-character');
@@ -24,9 +33,227 @@ export default function CharacterBuilderPage() {
     alert('Character saved!');
   };
 
+  const printCharacter = () => {
+    window.print();
+  };
+
+  const handleNameChange = (name: string) => {
+    setCharacter({ ...character, name });
+  };
+
+  const handleCharacteristicRoll = () => {
+    const rollCharacteristic = () => {
+      const rolls = [];
+      for (let i = 0; i < 4; i++) {
+        rolls.push(Math.floor(Math.random() * 6) + 1);
+      }
+      rolls.sort((a, b) => b - a);
+      return rolls.slice(0, 3).reduce((sum, roll) => sum + roll, 0);
+    };
+
+    const newCharacteristics = {
+      STR: rollCharacteristic(),
+      CON: rollCharacteristic(),
+      SIZ: rollCharacteristic(),
+      INT: rollCharacteristic(),
+      ACU: rollCharacteristic(),
+      DEX: rollCharacteristic(),
+      SOC: rollCharacteristic()
+    };
+
+    // Calculate derived stats
+    const effort = Math.floor((newCharacteristics.STR + newCharacteristics.CON) / 2);
+    const stamina = Math.floor((newCharacteristics.CON + newCharacteristics.SIZ) / 2);
+    const intellect = Math.floor((newCharacteristics.INT + newCharacteristics.ACU) / 2);
+    const spirit = Math.floor((newCharacteristics.INT + newCharacteristics.SOC) / 2);
+    const agility = Math.floor((newCharacteristics.DEX + newCharacteristics.ACU) / 2);
+    const charm = Math.floor((newCharacteristics.SOC + newCharacteristics.INT) / 2);
+    const hitPoints = Math.floor((newCharacteristics.CON + newCharacteristics.SIZ) / 2);
+    const spiritPoints = newCharacteristics.INT;
+    
+    const updatedCharacter = {
+      ...character,
+      characteristics: newCharacteristics,
+      derivedStats: {
+        ...character.derivedStats,
+        effort,
+        stamina,
+        intellect,
+        spirit,
+        agility,
+        charm,
+        hitPoints,
+        spiritPoints
+      },
+      currentStep: 'characteristics'
+    };
+    
+    setCharacter(updatedCharacter);
+  };
+
+  const completeCharacter = () => {
+    setCharacter({ ...character, currentStep: 'skills' });
+  };
+
+  const getPointCost = (stat: string, currentValue: number, newValue: number): number => {
+    const expensiveStats = ['DEX', 'INT', 'ACU'];
+    const isExpensive = expensiveStats.includes(stat);
+    const costPerPoint = isExpensive ? 2 : 1;
+    return Math.abs(newValue - currentValue) * costPerPoint;
+  };
+
+  const canAffordStatChange = (stat: string, currentValue: number, newValue: number): boolean => {
+    if (newValue < 8 || newValue > 19) return false;
+    const cost = getPointCost(stat, currentValue, newValue);
+    
+    // Calculate current points spent to get accurate available points
+    let totalSpent = 0;
+    Object.entries(pointBuyStats).forEach(([statName, statValue]) => {
+      if (statName === stat) {
+        // Use the new value for the stat we're changing
+        totalSpent += getPointCost(statName, 10, newValue);
+      } else {
+        // Use current value for other stats
+        totalSpent += getPointCost(statName, 10, statValue);
+      }
+    });
+    
+    const actualAvailablePoints = 24 - totalSpent;
+    return actualAvailablePoints >= 0;
+  };
+
+  const handlePointBuyChange = (stat: string, newValue: number) => {
+    if (isAdvancedMode) {
+      // In advanced mode, no restrictions - just prevent negative values
+      setPointBuyStats(prev => ({ ...prev, [stat]: Math.max(0, newValue) }));
+      return;
+    }
+    
+    // In normal mode, cap characteristics at 19
+    if (newValue > 19) return;
+    
+    if (!canAffordStatChange(stat, pointBuyStats[stat as keyof typeof pointBuyStats], newValue)) return;
+    
+    const currentValue = pointBuyStats[stat as keyof typeof pointBuyStats];
+    const cost = getPointCost(stat, currentValue, newValue);
+    
+    setPointBuyStats(prev => ({ ...prev, [stat]: newValue }));
+    setAvailablePoints(prev => newValue > currentValue ? prev - cost : prev + cost);
+  };
+
+  const confirmPointBuy = () => {
+    // Calculate derived stats
+    const effort = Math.floor((pointBuyStats.STR + pointBuyStats.CON) / 2);
+    const stamina = Math.floor((pointBuyStats.CON + pointBuyStats.SIZ) / 2);
+    const intellect = Math.floor((pointBuyStats.INT + pointBuyStats.ACU) / 2);
+    const spirit = Math.floor((pointBuyStats.INT + pointBuyStats.SOC) / 2);
+    const agility = Math.floor((pointBuyStats.DEX + pointBuyStats.ACU) / 2);
+    const charm = Math.floor((pointBuyStats.SOC + pointBuyStats.INT) / 2);
+    const hitPoints = Math.floor((pointBuyStats.CON + pointBuyStats.SIZ) / 2);
+    const spiritPoints = pointBuyStats.INT;
+    
+    const updatedCharacter = {
+      ...character,
+      characteristics: pointBuyStats,
+      derivedStats: {
+        ...character.derivedStats,
+        effort,
+        stamina,
+        intellect,
+        spirit,
+        agility,
+        charm,
+        hitPoints,
+        spiritPoints
+      },
+      currentStep: 'skills'
+    };
+    
+    setCharacter(updatedCharacter);
+    setCharacteristicMethod('pointbuy');
+  };
+
+  const goToPreviousStep = () => {
+    const updatedCharacter = { ...character };
+    
+    switch (character.currentStep) {
+      case 'terian':
+      case 'fey':
+      case 'elven':
+        updatedCharacter.currentStep = 'species';
+        updatedCharacter.species = null;
+        updatedCharacter.biology = null;
+        updatedCharacter.culture = null;
+        updatedCharacter.specialAbilities = [];
+        break;
+      case 'teranCulture':
+      case 'dworvenCulture':
+      case 'dweranCulture':
+      case 'elflingCulture':
+      case 'feralElflingCulture':
+      case 'faunCulture':
+      case 'orogCulture':
+        updatedCharacter.currentStep = character.species === 'Terian' ? 'terian' : 'fey';
+        updatedCharacter.biology = null;
+        updatedCharacter.culture = null;
+        break;
+      case 'profession':
+        if (character.species === 'Elven') {
+          updatedCharacter.currentStep = 'elven';
+          updatedCharacter.culture = null;
+        } else if (character.culture) {
+          // Go back to culture selection
+          if (character.biology === 'Teran') updatedCharacter.currentStep = 'teranCulture';
+          else if (character.biology === 'Dworven') updatedCharacter.currentStep = 'dworvenCulture';
+          else if (character.biology === 'Dweran') updatedCharacter.currentStep = 'dweranCulture';
+          else if (character.biology === 'Elfling') updatedCharacter.currentStep = 'elflingCulture';
+          else if (character.biology === 'Feral Elfling') updatedCharacter.currentStep = 'feralElflingCulture';
+          else if (character.biology === 'Faun') updatedCharacter.currentStep = 'faunCulture';
+          else if (character.biology === 'Orog') updatedCharacter.currentStep = 'orogCulture';
+          updatedCharacter.culture = null;
+        }
+        updatedCharacter.profession = null;
+        updatedCharacter.startingEquipment = [];
+        updatedCharacter.startingFunds = '';
+        break;
+      case 'archetype':
+        updatedCharacter.currentStep = 'profession';
+        updatedCharacter.archetype = null;
+        break;
+      case 'name':
+        updatedCharacter.currentStep = 'archetype';
+        updatedCharacter.name = '';
+        break;
+      case 'characteristics':
+        updatedCharacter.currentStep = 'name';
+        updatedCharacter.characteristics = {
+          STR: 0, CON: 0, SIZ: 0, INT: 0, ACU: 0, DEX: 0, SOC: 0
+        };
+        // Reset characteristic method when going back
+        setCharacteristicMethod(null);
+        setPointBuyStats({ STR: 10, CON: 10, SIZ: 10, INT: 10, ACU: 10, DEX: 10, SOC: 10 });
+        setAvailablePoints(24);
+        break;
+      case 'skills':
+        updatedCharacter.currentStep = 'characteristics';
+        // Clear skills when going back
+        updatedCharacter.skills = {};
+        break;
+      case 'complete':
+        updatedCharacter.currentStep = 'characteristics';
+        // Keep the method but allow re-selection
+        break;
+    }
+    
+    setCharacter(updatedCharacter);
+  };
+
   const resetCharacter = () => {
     if (confirm('Are you sure you want to reset your character? This cannot be undone.')) {
       setCharacter(createNewCharacter());
+      setCharacteristicMethod(null);
+      setPointBuyStats({ STR: 10, CON: 10, SIZ: 10, INT: 10, ACU: 10, DEX: 10, SOC: 10 });
+      setAvailablePoints(24);
       localStorage.removeItem('sagaborn-character');
     }
   };
@@ -38,10 +265,10 @@ export default function CharacterBuilderPage() {
       updatedCharacter.species = choice.result;
       
       if (choice.stats) {
-        updatedCharacter.lifespan = choice.stats.lifespan;
-        updatedCharacter.height = choice.stats.height;
-        updatedCharacter.weight = choice.stats.weight;
-        updatedCharacter.speed = choice.stats.speed;
+        if (choice.stats.lifespan) updatedCharacter.lifespan = choice.stats.lifespan;
+        if (choice.stats.height) updatedCharacter.height = choice.stats.height;
+        if (choice.stats.weight) updatedCharacter.weight = choice.stats.weight;
+        if (choice.stats.speed) updatedCharacter.speed = choice.stats.speed;
       }
       
       if (choice.abilities) {
@@ -51,16 +278,16 @@ export default function CharacterBuilderPage() {
       if (choice.nextTable) {
         updatedCharacter.currentStep = choice.nextTable;
       } else {
-        updatedCharacter.currentStep = 'characteristics';
+        updatedCharacter.currentStep = 'name';
       }
     } else if (character.currentStep === 'terian' || character.currentStep === 'fey') {
       updatedCharacter.biology = choice.result;
       
       if (choice.stats) {
-        updatedCharacter.lifespan = choice.stats.lifespan;
-        updatedCharacter.height = choice.stats.height;
-        updatedCharacter.weight = choice.stats.weight;
-        updatedCharacter.speed = choice.stats.speed;
+        if (choice.stats.lifespan) updatedCharacter.lifespan = choice.stats.lifespan;
+        if (choice.stats.height) updatedCharacter.height = choice.stats.height;
+        if (choice.stats.weight) updatedCharacter.weight = choice.stats.weight;
+        if (choice.stats.speed) updatedCharacter.speed = choice.stats.speed;
       }
       
       if (choice.abilities) {
@@ -70,37 +297,64 @@ export default function CharacterBuilderPage() {
       if (choice.nextTable) {
         updatedCharacter.currentStep = choice.nextTable;
       } else {
-        updatedCharacter.currentStep = 'characteristics';
+        updatedCharacter.currentStep = 'name';
       }
     } else if (character.currentStep === 'elven') {
       updatedCharacter.culture = choice.result;
-      updatedCharacter.currentStep = 'heritage';
+      
+      if (choice.stats) {
+        if (choice.stats.lifespan) updatedCharacter.lifespan = choice.stats.lifespan;
+        if (choice.stats.height) updatedCharacter.height = choice.stats.height;
+        if (choice.stats.weight) updatedCharacter.weight = choice.stats.weight;
+        if (choice.stats.speed) updatedCharacter.speed = choice.stats.speed;
+      }
+      
+      if (choice.abilities) {
+        updatedCharacter.specialAbilities = [...updatedCharacter.specialAbilities, ...choice.abilities];
+      }
+      
+      updatedCharacter.currentStep = 'name';
+    } else if (character.currentStep.includes('Culture')) {
+      updatedCharacter.culture = choice.result;
+      updatedCharacter.currentStep = 'profession';
+    } else if (character.currentStep === 'profession') {
+      updatedCharacter.profession = choice.result;
+      if (choice.stats) {
+        updatedCharacter.startingEquipment = choice.stats.equipment ? [choice.stats.equipment] : [];
+        updatedCharacter.startingFunds = choice.stats.funds || '';
+      }
+      if (choice.abilities) {
+        // Store profession skills for later use
+        updatedCharacter.specialAbilities = [...updatedCharacter.specialAbilities, ...choice.abilities];
+      }
+      updatedCharacter.currentStep = 'archetype';
+    } else if (character.currentStep === 'archetype') {
+      updatedCharacter.archetype = choice.result;
+      updatedCharacter.currentStep = 'name';
     }
     
     setCharacter(updatedCharacter);
   };
 
-  const getProgressSteps = () => {
-    const steps = ['Species'];
-    
-    if (character.species === 'Terian') {
-      steps.push('Biology', 'Culture');
-    } else if (character.species === 'Fey') {
-      steps.push('Biology', 'Culture');
-    } else if (character.species === 'Elven') {
-      steps.push('Culture');
-    }
-    
-    steps.push('Heritage', 'Characteristics', 'Final');
-    return steps;
-  };
+  const getProgressInfo = () => {
+    // Always show consistent 9-step process (includes skills)
+    const totalSteps = 9;
+    let currentStepNumber = 1;
+    let stepName = 'Species';
+    let isStepComplete = false;
 
-  const getCurrentStepIndex = () => {
-    const steps = getProgressSteps();
     switch (character.currentStep) {
-      case 'species': return 0;
+      case 'species':
+        currentStepNumber = 1;
+        stepName = 'Species';
+        isStepComplete = false;
+        break;
       case 'terian':
-      case 'fey': return 1;
+      case 'fey':
+        currentStepNumber = 2;
+        stepName = 'Biology';
+        isStepComplete = false;
+        break;
       case 'teranCulture':
       case 'dworvenCulture':
       case 'dweranCulture':
@@ -108,11 +362,59 @@ export default function CharacterBuilderPage() {
       case 'feralElflingCulture':
       case 'faunCulture':
       case 'orogCulture':
-      case 'elven': return character.species === 'Elven' ? 1 : 2;
-      case 'heritage': return steps.indexOf('Heritage');
-      case 'characteristics': return steps.indexOf('Characteristics');
-      default: return steps.length - 1;
+        currentStepNumber = 3;
+        stepName = 'Culture';
+        isStepComplete = false;
+        break;
+      case 'elven':
+        // Elven goes directly to culture selection (step 2 of 8, but we label it as culture)
+        currentStepNumber = 2;
+        stepName = 'Culture';
+        isStepComplete = false;
+        break;
+      case 'profession':
+        currentStepNumber = character.species === 'Elven' ? 3 : 4;
+        stepName = 'Profession';
+        isStepComplete = false;
+        break;
+      case 'archetype':
+        currentStepNumber = character.species === 'Elven' ? 4 : 5;
+        stepName = 'Archetype';
+        isStepComplete = false;
+        break;
+      case 'name':
+        currentStepNumber = character.species === 'Elven' ? 5 : 6;
+        stepName = 'Name';
+        isStepComplete = false;
+        break;
+      case 'characteristics':
+        currentStepNumber = character.species === 'Elven' ? 6 : 7;
+        stepName = 'Characteristics';
+        isStepComplete = false;
+        break;
+      case 'skills':
+        currentStepNumber = character.species === 'Elven' ? 7 : 8;
+        stepName = 'Skills';
+        isStepComplete = false;
+        break;
+      case 'complete':
+        currentStepNumber = totalSteps;
+        stepName = 'Complete';
+        isStepComplete = true;
+        break;
+      default:
+        currentStepNumber = 1;
+        stepName = 'Species';
+        isStepComplete = false;
     }
+
+    return {
+      currentStepNumber,
+      totalSteps,
+      stepName,
+      isStepComplete,
+      progressPercentage: isStepComplete ? 100 : ((currentStepNumber - 1) / totalSteps) * 100
+    };
   };
 
   return (
@@ -125,7 +427,56 @@ export default function CharacterBuilderPage() {
           </p>
         </header>
 
+
+        {characterMode === null ? (
+          <div className="bg-slate-900 p-8 rounded-lg border border-slate-800 text-center">
+            <h2 className="text-3xl font-bold text-white mb-6">Choose Character Creation Mode</h2>
+            
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <div
+                onClick={() => setCharacterMode('normal')}
+                className="border border-slate-600 rounded-lg p-6 hover:bg-slate-700 cursor-pointer transition-colors bg-slate-800 hover:border-blue-500"
+              >
+                <h3 className="text-2xl font-bold text-blue-300 mb-4">Normal Mode</h3>
+                <div className="text-slate-300 space-y-2 text-left">
+                  <p>• Roll dice or use point-buy for characteristics</p>
+                  <p>• Choose from profession and species tables</p>
+                  <p>• Skills capped at 75% during creation</p>
+                  <p>• Characteristics capped at 19</p>
+                  <p>• Balanced point-based allocation</p>
+                </div>
+                <p className="text-green-300 text-sm mt-4 font-medium">Perfect for new characters and standard gameplay</p>
+              </div>
+              
+              <div
+                onClick={() => setCharacterMode('advanced')}
+                className="border border-slate-600 rounded-lg p-6 hover:bg-slate-700 cursor-pointer transition-colors bg-slate-800 hover:border-purple-500"
+              >
+                <h3 className="text-2xl font-bold text-purple-300 mb-4">Advanced Mode</h3>
+                <div className="text-slate-300 space-y-2 text-left">
+                  <p>• Set characteristics to any value (no caps)</p>
+                  <p>• Choose any options without rolling</p>
+                  <p>• Skills can reach 90% (one skill to 95%)</p>
+                  <p>• No point restrictions or limits</p>
+                  <p>• Complete creative freedom</p>
+                </div>
+                <p className="text-purple-300 text-sm mt-4 font-medium">Ideal for importing existing high-level characters</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+
         <div className="flex gap-4 justify-center mb-8">
+          {character.currentStep !== 'species' && (
+            <button
+              onClick={goToPreviousStep}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Back
+            </button>
+          )}
           <button
             onClick={saveCharacter}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -133,6 +484,15 @@ export default function CharacterBuilderPage() {
             <Save className="w-4 h-4" />
             Save Character
           </button>
+          {character.currentStep === 'complete' && (
+            <button
+              onClick={printCharacter}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Printer className="w-4 h-4" />
+              Print Character
+            </button>
+          )}
           <button
             onClick={resetCharacter}
             className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -140,19 +500,33 @@ export default function CharacterBuilderPage() {
             <RotateCcw className="w-4 h-4" />
             Reset
           </button>
+          <button
+            onClick={() => {
+              setCharacterMode(null);
+              setCharacter(createNewCharacter());
+              setCharacteristicMethod(null);
+              setPointBuyStats({
+                STR: 10, CON: 10, SIZ: 10, INT: 10, ACU: 10, DEX: 10, SOC: 10
+              });
+              setAvailablePoints(24);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-400 transition-colors"
+          >
+            ← Start Over
+          </button>
         </div>
 
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <span className="text-sm text-slate-400">Progress</span>
+            <span className="text-sm text-slate-400">Progress: {getProgressInfo().stepName}</span>
             <span className="text-sm text-slate-400">
-              Step {getCurrentStepIndex() + 1} of {getProgressSteps().length}
+              Step {getProgressInfo().currentStepNumber} of {getProgressInfo().totalSteps}
             </span>
           </div>
           <div className="w-full bg-slate-800 rounded-full h-2">
             <div 
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((getCurrentStepIndex() + 1) / getProgressSteps().length) * 100}%` }}
+              style={{ width: `${getProgressInfo().progressPercentage}%` }}
             />
           </div>
         </div>
@@ -162,20 +536,423 @@ export default function CharacterBuilderPage() {
             {(character.currentStep === 'species' || 
               character.currentStep === 'terian' || 
               character.currentStep === 'fey' || 
-              character.currentStep === 'elven') && (
+              character.currentStep === 'elven' ||
+              character.currentStep.includes('Culture') ||
+              character.currentStep === 'profession' ||
+              character.currentStep === 'archetype') && (
               <SpeciesSelection
                 currentStep={character.currentStep}
                 onSelectionMade={handleSpeciesSelection}
+                isAdvancedMode={isAdvancedMode}
               />
             )}
             
+            {character.currentStep === 'name' && (
+              <div className="bg-slate-900 p-8 rounded-lg border border-slate-800">
+                <h2 className="text-2xl font-semibold text-white mb-6">Character Name</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="character-name" className="block text-sm font-medium text-slate-300 mb-2">
+                      Enter your character's name:
+                    </label>
+                    <input
+                      id="character-name"
+                      type="text"
+                      value={character.name}
+                      onChange={(e) => handleNameChange(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter character name..."
+                    />
+                  </div>
+                  <button
+                    onClick={() => setCharacter({ ...character, currentStep: 'characteristics' })}
+                    disabled={!character.name.trim()}
+                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-400 transition-colors"
+                  >
+                    Continue to Characteristics
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {character.currentStep === 'characteristics' && (
-              <div className="bg-slate-900 p-8 rounded-lg border border-slate-800 text-center">
-                <h2 className="text-2xl font-semibold text-white mb-4">Characteristics</h2>
-                <p className="text-slate-400">
-                  Characteristic allocation system coming soon. You'll be able to roll or 
-                  use point-buy system to set your character's core attributes.
+              <div className="bg-slate-900 p-8 rounded-lg border border-slate-800">
+                {isAdvancedMode ? (
+                  // Skip method selection in advanced mode, go straight to point-buy interface
+                  <div>
+                    <h2 className="text-2xl font-semibold text-white mb-6">
+                      Set Characteristics (Advanced Mode)
+                    </h2>
+                    <div className="mb-4">
+                      <p className="text-slate-400 mb-2">
+                        Set each characteristic to any value. No limits or costs apply.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      {Object.entries(pointBuyStats).map(([stat, value]) => (
+                        <div key={stat} className="flex items-center justify-between bg-slate-800 p-4 rounded">
+                          <div className="flex items-center gap-4">
+                            <span className="text-white font-semibold w-8">{stat}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handlePointBuyChange(stat, value - 1)}
+                              className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                              -
+                            </button>
+                            <span className="text-2xl font-bold text-white w-8 text-center">{value}</span>
+                            <button
+                              onClick={() => handlePointBuyChange(stat, value + 1)}
+                              className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="text-center">
+                      <button
+                        onClick={() => setCharacter({ ...character, currentStep: 'skills' })}
+                        className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                      >
+                        Next: Skills
+                      </button>
+                    </div>
+                  </div>
+                ) : !characteristicMethod ? (
+                  <div>
+                    <h2 className="text-2xl font-semibold text-white mb-6">
+                      Choose Characteristic Method{isAdvancedMode ? ' (Advanced Mode)' : ''}
+                    </h2>
+                    <p className="text-slate-400 mb-6">
+                      {isAdvancedMode
+                        ? 'How would you like to set your characteristics? No limits or restrictions apply.'
+                        : 'How would you like to determine your character\'s core attributes?'
+                      }
+                    </p>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div
+                        onClick={() => setCharacteristicMethod('roll')}
+                        className="border border-slate-600 rounded-lg p-4 hover:bg-slate-700 cursor-pointer transition-colors bg-slate-800"
+                      >
+                        <h3 className="font-bold text-blue-300 mb-2">Roll Method</h3>
+                        <p className="text-slate-300 text-sm mb-2">Roll 4d6, drop the lowest, for each characteristic.</p>
+                        <p className="text-green-300 text-sm">Traditional and exciting!</p>
+                      </div>
+                      
+                      <div
+                        onClick={() => setCharacteristicMethod('pointbuy')}
+                        className="border border-slate-600 rounded-lg p-4 hover:bg-slate-700 cursor-pointer transition-colors bg-slate-800"
+                      >
+                        <h3 className="font-bold text-blue-300 mb-2">Point-Buy Method</h3>
+                        <p className="text-slate-300 text-sm mb-2">
+                          {isAdvancedMode
+                            ? 'Manually set each characteristic to any value. No point limits.'
+                            : 'Start with all stats at 10. Spend 24 points to raise characteristics. DEX, INT, and ACU cost more.'
+                          }
+                        </p>
+                        <p className="text-green-300 text-sm">
+                          {isAdvancedMode ? 'Complete freedom!' : 'More control and customization!'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : characteristicMethod === 'roll' ? (
+                  <div>
+                    <h2 className="text-2xl font-semibold text-white mb-6">Roll Characteristics</h2>
+                    <p className="text-slate-400 mb-6">
+                      Roll 4d6, drop the lowest, for each characteristic. This determines your character's core attributes.
+                    </p>
+                    
+                    {character.characteristics.STR === 0 ? (
+                      <div className="flex gap-4">
+                        <button
+                          onClick={handleCharacteristicRoll}
+                          className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Roll All Characteristics
+                        </button>
+                        <button
+                          onClick={() => setCharacteristicMethod(null)}
+                          className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                        >
+                          Back to Method Selection
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                          <div className="text-center">
+                            <div className="text-sm text-slate-400">STR</div>
+                            <div className="text-2xl font-bold text-white">{character.characteristics.STR}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-slate-400">CON</div>
+                            <div className="text-2xl font-bold text-white">{character.characteristics.CON}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-slate-400">SIZ</div>
+                            <div className="text-2xl font-bold text-white">{character.characteristics.SIZ}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-slate-400">INT</div>
+                            <div className="text-2xl font-bold text-white">{character.characteristics.INT}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-slate-400">ACU</div>
+                            <div className="text-2xl font-bold text-white">{character.characteristics.ACU}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-slate-400">DEX</div>
+                            <div className="text-2xl font-bold text-white">{character.characteristics.DEX}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-slate-400">SOC</div>
+                            <div className="text-2xl font-bold text-white">{character.characteristics.SOC}</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-4">
+                          <button
+                            onClick={() => {
+                              setCharacteristicMethod(null);
+                              setCharacter({...character, characteristics: {
+                                STR: 0, CON: 0, SIZ: 0, INT: 0, ACU: 0, DEX: 0, SOC: 0
+                              }});
+                            }}
+                            className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                          >
+                            Back to Method Selection
+                          </button>
+                          <button
+                            onClick={handleCharacteristicRoll}
+                            className="flex-1 px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                          >
+                            Re-roll All
+                          </button>
+                          <button
+                            onClick={completeCharacter}
+                            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          >
+                            Next: Skills
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <h2 className="text-2xl font-semibold text-white mb-6">
+                      {isAdvancedMode ? 'Set Characteristics (Advanced Mode)' : 'Point-Buy Characteristics'}
+                    </h2>
+                    <div className="mb-4">
+                      <p className="text-slate-400 mb-2">
+                        {isAdvancedMode 
+                          ? 'Set each characteristic to any value. No limits or costs apply.'
+                          : 'Customize your characteristics by spending points. All stats start at 10.'
+                        }
+                      </p>
+                      {!isAdvancedMode && (
+                        <p className="text-blue-300 text-sm mb-4">
+                          Points Remaining: <span className="font-bold text-xl">{availablePoints}</span> 
+                          <span className="text-slate-400 ml-2">(STR, CON, SIZ, SOC cost 1 point each. DEX, INT, ACU cost 2 points each)</span>
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      {Object.entries(pointBuyStats).map(([stat, value]) => (
+                        <div key={stat} className="flex items-center justify-between bg-slate-800 p-4 rounded">
+                          <div className="flex items-center gap-4">
+                            <span className="text-white font-semibold w-8">{stat}</span>
+                            {!isAdvancedMode && (
+                              <span className="text-slate-400 text-sm">
+                                {['DEX', 'INT', 'ACU'].includes(stat) ? '(2 pts)' : '(1 pt)'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isAdvancedMode ? (
+                              <input
+                                type="number"
+                                value={value}
+                                onChange={(e) => {
+                                  const newValue = parseInt(e.target.value) || 0;
+                                  handlePointBuyChange(stat, newValue);
+                                }}
+                                className="w-20 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-center"
+                              />
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handlePointBuyChange(stat, value - 1)}
+                                  disabled={!canAffordStatChange(stat, value, value - 1)}
+                                  className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500"
+                                >
+                                  -
+                                </button>
+                                <span className="text-2xl font-bold text-white w-8 text-center">{value}</span>
+                                <button
+                                  onClick={() => handlePointBuyChange(stat, value + 1)}
+                                  disabled={!canAffordStatChange(stat, value, value + 1)}
+                                  className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-slate-700 disabled:text-slate-500"
+                                >
+                                  +
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => {
+                          setCharacteristicMethod(null);
+                          setPointBuyStats({ STR: 10, CON: 10, SIZ: 10, INT: 10, ACU: 10, DEX: 10, SOC: 10 });
+                          setAvailablePoints(24);
+                        }}
+                        className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                      >
+                        Back to Method Selection
+                      </button>
+                      <button
+                        onClick={confirmPointBuy}
+                        disabled={!isAdvancedMode && availablePoints > 0}
+                        className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-slate-700 disabled:text-slate-400 transition-colors"
+                      >
+                        {isAdvancedMode ? 'Next: Skills' : 'Confirm Point-Buy'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {character.currentStep === 'skills' && (
+              <SkillSelection
+                character={character}
+                isAdvancedMode={isAdvancedMode}
+                onComplete={(skills) => {
+                  setCharacter({
+                    ...character,
+                    skills,
+                    currentStep: 'complete'
+                  });
+                }}
+                onBack={() => setCharacter({ ...character, currentStep: 'characteristics' })}
+              />
+            )}
+            
+            {character.currentStep === 'complete' && (
+              <div className="character-complete bg-slate-900 p-8 rounded-lg border border-slate-800 text-center">
+                <h2 className="text-2xl font-semibold text-white mb-4">Character Complete!</h2>
+                <p className="text-slate-400 mb-6">
+                  Your character {character.name} is ready for adventure! You can print your character sheet or save it for later.
                 </p>
+                <div className="bg-slate-800 p-6 rounded-lg text-left">
+                  <h3 className="text-lg font-semibold text-white mb-4">Character Summary</h3>
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="mb-2"><span className="text-slate-400">Name:</span> <span className="text-white">{character.name}</span></div>
+                      <div className="mb-2"><span className="text-slate-400">Species:</span> <span className="text-white">{character.species}</span></div>
+                      {character.biology && (
+                        <div className="mb-2"><span className="text-slate-400">Biology:</span> <span className="text-white">{character.biology}</span></div>
+                      )}
+                      {character.culture && (
+                        <div className="mb-2"><span className="text-slate-400">Culture:</span> <span className="text-white">{character.culture}</span></div>
+                      )}
+                      {character.profession && (
+                        <div className="mb-2"><span className="text-slate-400">Profession:</span> <span className="text-white">{character.profession}</span></div>
+                      )}
+                      {character.archetype && (
+                        <div className="mb-2"><span className="text-slate-400">Archetype:</span> <span className="text-white">{character.archetype}</span></div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="mb-2"><span className="text-slate-400">Hit Points:</span> <span className="text-white">{character.derivedStats.hitPoints}</span></div>
+                      <div className="mb-2"><span className="text-slate-400">Spirit Points:</span> <span className="text-white">{character.derivedStats.spiritPoints}</span></div>
+                      <div className="mb-2"><span className="text-slate-400">Speed:</span> <span className="text-white">{character.speed} ft</span></div>
+                      <div className="mb-2"><span className="text-slate-400">Lifespan:</span> <span className="text-white">{character.lifespan} years</span></div>
+                      {character.startingFunds && (
+                        <div className="mb-2"><span className="text-slate-400">Starting Funds:</span> <span className="text-white">{character.startingFunds}</span></div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+                    <div><div className="text-slate-400 text-xs">Effort</div><div className="text-white font-semibold">{character.derivedStats.effort}</div></div>
+                    <div><div className="text-slate-400 text-xs">Stamina</div><div className="text-white font-semibold">{character.derivedStats.stamina}</div></div>
+                    <div><div className="text-slate-400 text-xs">Intellect</div><div className="text-white font-semibold">{character.derivedStats.intellect}</div></div>
+                    <div><div className="text-slate-400 text-xs">Spirit</div><div className="text-white font-semibold">{character.derivedStats.spirit}</div></div>
+                    <div><div className="text-slate-400 text-xs">Agility</div><div className="text-white font-semibold">{character.derivedStats.agility}</div></div>
+                    <div><div className="text-slate-400 text-xs">Charm</div><div className="text-white font-semibold">{character.derivedStats.charm}</div></div>
+                  </div>
+                  
+                  {character.startingEquipment.length > 0 && (
+                    <div className="mt-4">
+                      <div className="text-slate-400 text-xs mb-1">Starting Equipment:</div>
+                      {character.startingEquipment.map((item, index) => (
+                        <div key={index} className="text-green-300 text-xs">• {item}</div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {character.specialAbilities.length > 0 && (
+                    <div className="mt-4">
+                      <div className="text-slate-400 text-xs mb-1">Special Abilities:</div>
+                      {character.specialAbilities.map((ability, index) => (
+                        <div key={index} className="text-blue-300 text-xs">• {ability}</div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {Object.keys(character.skills).length > 0 && (
+                    <div className="mt-4">
+                      <div className="text-slate-400 text-xs mb-1">Skills:</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {Object.entries(character.skills)
+                          .filter(([_, value]) => value > 0)
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([skill, value]) => (
+                            <div key={skill} className="text-green-300 text-xs">
+                              {skill} {value}%
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-6 flex gap-4 justify-center">
+                  <button
+                    onClick={() => {
+                      setCharacter({ ...character, currentStep: 'characteristics' });
+                      // Reset method to allow re-selection
+                      setCharacteristicMethod(null);
+                    }}
+                    className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    Edit Characteristics
+                  </button>
+                  <button
+                    onClick={printCharacter}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Print Character Sheet
+                  </button>
+                  <button
+                    onClick={saveCharacter}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Save Character
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -210,6 +987,20 @@ export default function CharacterBuilderPage() {
                 </div>
               )}
               
+              {character.profession && (
+                <div>
+                  <span className="text-slate-400">Profession:</span>
+                  <span className="ml-2 text-white">{character.profession}</span>
+                </div>
+              )}
+              
+              {character.archetype && (
+                <div>
+                  <span className="text-slate-400">Archetype:</span>
+                  <span className="ml-2 text-white">{character.archetype}</span>
+                </div>
+              )}
+              
               {character.height && character.weight && (
                 <>
                   <div>
@@ -236,6 +1027,9 @@ export default function CharacterBuilderPage() {
             </div>
           </div>
         </div>
+          </>
+        )}
+
       </div>
     </div>
   );

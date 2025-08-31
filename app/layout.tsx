@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation/Navigation";
+import SupabaseProvider from "@/components/SupabaseProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,14 +30,17 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-white`}
+        suppressHydrationWarning={true}
       >
-        <Navigation />
-        <main>{children}</main>
-        <footer className="border-t border-slate-800 bg-slate-950 py-8">
-          <div className="container mx-auto px-4 text-center text-slate-400">
-            <p>&copy; 2024 SagaBorn RPG. All rights reserved.</p>
-          </div>
-        </footer>
+        <SupabaseProvider>
+          <Navigation />
+          <main>{children}</main>
+          <footer className="border-t border-slate-800 bg-slate-950 py-8">
+            <div className="container mx-auto px-4 text-center text-slate-400">
+              <p>&copy; 2025 SagaBorn RPG. All rights reserved.</p>
+            </div>
+          </footer>
+        </SupabaseProvider>
       </body>
     </html>
   );

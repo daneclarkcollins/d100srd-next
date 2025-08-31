@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AuthButton from "@/components/auth/AuthButton";
 
 const navItems = [
   { name: "Home", href: "/" },
@@ -30,7 +31,7 @@ export default function Navigation() {
             SagaBorn <span className="text-blue-400">D100</span>
           </Link>
 
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -44,6 +45,7 @@ export default function Navigation() {
                 {item.name}
               </Link>
             ))}
+            <AuthButton />
           </div>
 
           <button
@@ -92,6 +94,9 @@ export default function Navigation() {
                 {item.name}
               </Link>
             ))}
+            <div className="px-3 py-2 border-t border-slate-800 mt-4 pt-4">
+              <AuthButton />
+            </div>
           </div>
         )}
       </div>

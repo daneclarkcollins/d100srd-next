@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dice6 } from 'lucide-react';
 import { SpeciesChoice, rollDice, getTableForStep } from '@/lib/character-data';
 
 interface SpeciesSelectionProps {
   currentStep: string;
   onSelectionMade: (choice: SpeciesChoice, rolled?: boolean) => void;
+  isAdvancedMode?: boolean;
 }
 
-export default function SpeciesSelection({ currentStep, onSelectionMade }: SpeciesSelectionProps) {
+export default function SpeciesSelection({ currentStep, onSelectionMade, isAdvancedMode = false }: SpeciesSelectionProps) {
   const [rollResult, setRollResult] = useState<number | null>(null);
   const [selectedChoice, setSelectedChoice] = useState<SpeciesChoice | null>(null);
+  const [customInput, setCustomInput] = useState('');
 
   const table = getTableForStep(currentStep);
+
+  // Reset state when step changes
+  useEffect(() => {
+    setRollResult(null);
+    setSelectedChoice(null);
+    setCustomInput('');
+  }, [currentStep]);
 
   const getStepTitle = () => {
     switch (currentStep) {
@@ -21,12 +30,22 @@ export default function SpeciesSelection({ currentStep, onSelectionMade }: Speci
       case 'terian': return 'Choose Your Terian Biology';
       case 'fey': return 'Choose Your Fey Biology';
       case 'elven': return 'Choose Your Elven Culture';
+      case 'teranCulture': return 'Choose Your Teran Culture';
+      case 'dworvenCulture': return 'Choose Your Dworven Culture';
+      case 'dweranCulture': return 'Choose Your Dweran Culture';
+      case 'elflingCulture': return 'Choose Your Elfling Culture';
+      case 'feralElflingCulture': return 'Choose Your Feral Elfling Culture';
+      case 'faunCulture': return 'Choose Your Faun Culture';
+      case 'orogCulture': return 'Choose Your Orog Culture';
+      case 'profession': return 'Choose Your Profession';
+      case 'archetype': return 'Choose Your Archetype';
       default: return 'Make Your Selection';
     }
   };
 
   const handleRoll = () => {
-    const result = rollDice(10)[0];
+    const diceSize = currentStep === 'profession' ? 100 : 10;
+    const result = rollDice(diceSize)[0];
     setRollResult(result);
     
     const choice = table.find(option => 
@@ -49,6 +68,18 @@ export default function SpeciesSelection({ currentStep, onSelectionMade }: Speci
     }
   };
 
+  const handleCustomConfirm = () => {
+    if (customInput.trim()) {
+      const customChoice: SpeciesChoice = {
+        range: [1, 1],
+        result: customInput.trim(),
+        description: `Custom ${getStepTitle().toLowerCase().replace('choose your ', '')}`,
+        stats: {}
+      };
+      onSelectionMade(customChoice, false);
+    }
+  };
+
   if (table.length === 0) {
     return (
       <div className="bg-slate-900 p-6 rounded-lg border border-slate-800">
@@ -57,24 +88,34 @@ export default function SpeciesSelection({ currentStep, onSelectionMade }: Speci
     );
   }
 
+
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-white mb-4">{getStepTitle()}</h2>
-        <div className="flex gap-4 justify-center">
-          <button
-            onClick={handleRoll}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-          >
-            <Dice6 className="w-5 h-5" />
-            Roll 1d10
-          </button>
-        </div>
-        
-        {rollResult && (
-          <div className="mt-4 text-center">
-            <span className="text-2xl font-bold text-blue-400">Rolled: {rollResult}</span>
-          </div>
+        <h2 className="text-3xl font-bold text-white mb-4">
+          {getStepTitle()}{isAdvancedMode ? ' (Advanced Mode)' : ''}
+        </h2>
+        {!isAdvancedMode && (
+          <>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={handleRoll}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                <Dice6 className="w-5 h-5" />
+                Roll 1d{currentStep === 'profession' ? '100' : '10'}
+              </button>
+            </div>
+            
+            {rollResult && (
+              <div className="mt-4 text-center">
+                <span className="text-2xl font-bold text-blue-400">Rolled: {rollResult}</span>
+              </div>
+            )}
+          </>
+        )}
+        {isAdvancedMode && (
+          <p className="text-slate-400 mb-4">Select any option - no rolling required</p>
         )}
       </div>
 
