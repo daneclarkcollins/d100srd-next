@@ -37,7 +37,7 @@ export function getContentByType(type: string): ContentItem[] {
         ...data
       }
     })
-    .sort((a, b) => (a.order || 999) - (b.order || 999))
+    .sort((a, b) => ((a as any).order || 999) - ((b as any).order || 999))
 }
 
 export function getContentBySlug(type: string, slug: string): ContentItem | null {

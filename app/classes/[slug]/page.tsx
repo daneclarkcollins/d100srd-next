@@ -2,11 +2,9 @@ import { notFound } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { getContentBySlug, getAllContentSlugs } from '@/lib/markdown';
 import DiceRoller from '@/components/DiceRoller/DiceRoller';
-import CharacterBuilder from '@/components/CharacterBuilder/CharacterBuilder';
 
 const components = {
   DiceRoller,
-  CharacterBuilder,
 };
 
 interface PageProps {
@@ -16,7 +14,7 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  const slugs = getAllContentSlugs('rules');
+  const slugs = getAllContentSlugs('classes');
   return slugs.map((slug) => ({
     slug,
   }));
@@ -24,7 +22,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const content = getContentBySlug('rules', slug);
+  const content = getContentBySlug('classes', slug);
   
   if (!content) {
     return {
@@ -38,9 +36,9 @@ export async function generateMetadata({ params }: PageProps) {
   };
 }
 
-export default async function RulePage({ params }: PageProps) {
+export default async function ClassPage({ params }: PageProps) {
   const { slug } = await params;
-  const content = getContentBySlug('rules', slug);
+  const content = getContentBySlug('classes', slug);
 
   if (!content) {
     notFound();

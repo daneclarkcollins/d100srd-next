@@ -18,7 +18,6 @@ export const metadata: Metadata = {
   description: "The official System Reference Document for SagaBorn D100 - A fantasy tabletop RPG system combining classic d100 mechanics with modern storytelling.",
   keywords: ["SagaBorn", "D100", "RPG", "tabletop", "fantasy", "roleplaying", "game"],
   authors: [{ name: "SagaBorn RPG" }],
-  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
