@@ -13,13 +13,16 @@ import { useSupabase } from '@/components/SupabaseProvider';
 import { useCharacters } from '@/hooks/useCharacters';
 
 // Equipment step component that auto-rolls on mount
-function EquipmentStepNormal({ character, setCharacter }: { 
+function EquipmentStepNormal({ character, setCharacter, isEditing }: { 
   character: Character; 
-  setCharacter: (char: Character) => void 
+  setCharacter: (char: Character) => void;
+  isEditing?: boolean;
 }) {
-  // Auto-roll on mount if no funds set yet
+  const [fundsInput, setFundsInput] = useState(character.startingFundsAmount || 0);
+
+  // Auto-roll on mount if no funds set yet and not editing
   useEffect(() => {
-    if (character.startingFundsAmount === 0) {
+    if (!isEditing && character.startingFundsAmount === 0) {
       const roll = Math.floor(Math.random() * 4) + 1; // 1d4
       const amount = roll * 10 + 10;
       setCharacter({
@@ -27,6 +30,9 @@ function EquipmentStepNormal({ character, setCharacter }: {
         startingFundsAmount: amount,
         startingFunds: `${amount} gp (rolled ${roll} × 10 + 10)`
       });
+      setFundsInput(amount);
+    } else if (isEditing) {
+      setFundsInput(character.startingFundsAmount || 0);
     }
   }, []); // Only run once on mount
 
@@ -38,34 +44,68 @@ function EquipmentStepNormal({ character, setCharacter }: {
       startingFundsAmount: amount,
       startingFunds: `${amount} gp (rolled ${roll} × 10 + 10)`
     });
+    setFundsInput(amount);
+  };
+
+  const handleFundsChange = (value: string) => {
+    const amount = parseInt(value) || 0;
+    setFundsInput(amount);
+    setCharacter({
+      ...character,
+      startingFundsAmount: amount,
+      startingFunds: `${amount} gp`
+    });
   };
 
   return (
     <div>
-      <h3 className="text-lg font-semibold text-white mb-4">Starting Funds</h3>
+      <h3 className="text-lg font-semibold text-white mb-4">
+        {isEditing ? 'Current Funds' : 'Starting Funds'}
+      </h3>
       <p className="text-slate-400 mb-6">
-        Your starting funds have been rolled (1d4 × 10 + 10 gold pieces).
+        {isEditing 
+          ? 'Adjust your character\'s current funds as needed.'
+          : 'Your starting funds have been rolled (1d4 × 10 + 10 gold pieces).'}
       </p>
       
       <div className="space-y-6">
-        <div className="text-center p-6 bg-slate-800 rounded-lg">
-          <h4 className="text-xl font-semibold text-white mb-2">Starting Funds</h4>
-          <p className="text-3xl font-bold text-green-400">{character.startingFunds}</p>
-        </div>
+        {isEditing ? (
+          <div>
+            <label htmlFor="funds-edit" className="block text-sm font-medium text-slate-300 mb-2">
+              Funds (gold pieces):
+            </label>
+            <input
+              id="funds-edit"
+              type="number"
+              value={fundsInput}
+              onChange={(e) => handleFundsChange(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter amount..."
+              min="0"
+            />
+          </div>
+        ) : (
+          <div className="text-center p-6 bg-slate-800 rounded-lg">
+            <h4 className="text-xl font-semibold text-white mb-2">Starting Funds</h4>
+            <p className="text-3xl font-bold text-green-400">{character.startingFunds}</p>
+          </div>
+        )}
         
         <div className="flex gap-4">
-          <button
-            onClick={handleReroll}
-            className="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-          >
-            <Dice6 className="w-4 h-4" />
-            Re-roll
-          </button>
+          {!isEditing && (
+            <button
+              onClick={handleReroll}
+              className="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+            >
+              <Dice6 className="w-4 h-4" />
+              Re-roll
+            </button>
+          )}
           <button
             onClick={() => setCharacter({ ...character, currentStep: 'complete' })}
             className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
-            Complete Character
+            {isEditing ? 'Save Changes' : 'Complete Character'}
           </button>
         </div>
       </div>
@@ -102,7 +142,17 @@ export default function CharacterBuilderPage() {
     if (editId && !charactersLoading) {
       const charToEdit = characters.find(c => c.id === editId);
       if (charToEdit) {
-        const loadedChar = charToEdit as any as Character;
+        // Ensure all required properties exist with defaults
+        const loadedChar: Character = {
+          ...createNewCharacter(), // Start with default values
+          ...charToEdit, // Override with loaded data
+          specialAbilities: (charToEdit as any).specialAbilities || (charToEdit as any).special_abilities || [],
+          startingEquipment: (charToEdit as any).startingEquipment || (charToEdit as any).starting_equipment || [],
+          derivedStats: (charToEdit as any).derivedStats || (charToEdit as any).derived_stats || {},
+          characteristics: (charToEdit as any).characteristics || {},
+          skills: (charToEdit as any).skills || {}
+        } as Character;
+        
         setCharacter(loadedChar);
         setCurrentCharacterId(editId);
         setCharacterMode('advanced');
@@ -113,7 +163,7 @@ export default function CharacterBuilderPage() {
         }
         
         // Set up point buy stats if they exist
-        if (loadedChar.characteristics.STR > 0) {
+        if (loadedChar.characteristics?.STR && loadedChar.characteristics.STR > 0) {
           setPointBuyStats({
             STR: loadedChar.characteristics.STR,
             CON: loadedChar.characteristics.CON,
@@ -1109,14 +1159,16 @@ export default function CharacterBuilderPage() {
                 
                 {isAdvancedMode ? (
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-4">Set Starting Funds (Advanced Mode)</h3>
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      {isEditing ? 'Edit Current Funds (Advanced Mode)' : 'Set Starting Funds (Advanced Mode)'}
+                    </h3>
                     <p className="text-slate-400 mb-6">
-                      Enter any amount for your starting funds. No restrictions apply.
+                      {isEditing ? 'Update your current funds amount.' : 'Enter any amount for your starting funds. No restrictions apply.'}
                     </p>
                     
                     <div className="mb-6">
                       <label htmlFor="funds-amount" className="block text-sm font-medium text-slate-300 mb-2">
-                        Starting Funds (gold pieces):
+                        {isEditing ? 'Current Funds' : 'Starting Funds'} (gold pieces):
                       </label>
                       <input
                         id="funds-amount"
@@ -1141,11 +1193,11 @@ export default function CharacterBuilderPage() {
                       disabled={character.startingFundsAmount === 0}
                       className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-400 transition-colors"
                     >
-                      Complete Character
+                      {isEditing ? 'Save Changes' : 'Complete Character'}
                     </button>
                   </div>
                 ) : (
-                  <EquipmentStepNormal character={character} setCharacter={setCharacter} />
+                  <EquipmentStepNormal character={character} setCharacter={setCharacter} isEditing={isEditing} />
                 )}
               </div>
             )}
@@ -1241,7 +1293,7 @@ export default function CharacterBuilderPage() {
                 </div>
               )}
               
-              {character.specialAbilities.length > 0 && (
+              {character.specialAbilities && character.specialAbilities.length > 0 && (
                 <div>
                   <span className="text-slate-400">Special Abilities:</span>
                   <div className="ml-2 text-white">

@@ -169,7 +169,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                   
-                  <div className="flex flex-col gap-2">
+                  <div className="relative flex flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
                       <Link
                         href={`/tools/character-sheet?id=${character.id}`}
@@ -189,38 +189,37 @@ export default function DashboardPage() {
                       </Link>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setShowLevelUpModal(true)}
-                        className="flex items-center justify-center gap-1 px-3 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors"
-                        title="Level Up Character"
-                      >
-                        <TrendingUp className="w-4 h-4" />
-                        Level Up
-                      </button>
+                    <button
+                      onClick={() => setShowLevelUpModal(true)}
+                      className="flex items-center justify-center gap-1 px-3 py-2 mb-8 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors cursor-pointer"
+                      title="Level Up Character"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      Level Up
+                    </button>
+
+                    {/* Small icon buttons in bottom right */}
+                    <div className="absolute bottom-0 right-0 flex gap-1">
                       <button
                         onClick={() => handleExportCharacter(character)}
-                        className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-600 text-white rounded text-sm hover:bg-slate-500 transition-colors"
+                        className="p-1 bg-slate-600 text-white rounded hover:bg-slate-500 transition-colors cursor-pointer"
                         title="Export Character"
                       >
-                        <Download className="w-4 h-4" />
-                        Export
+                        <Download className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCharacter(character.id, character.name)}
+                        disabled={deletingCharacter === character.id}
+                        className="p-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                        title={deletingCharacter === character.id ? 'Deleting...' : 'Delete Character'}
+                      >
+                        {deletingCharacter === character.id ? (
+                          <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3 h-3" />
+                        )}
                       </button>
                     </div>
-
-                    <button
-                      onClick={() => handleDeleteCharacter(character.id, character.name)}
-                      disabled={deletingCharacter === character.id}
-                      className="flex items-center justify-center gap-1 w-full px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
-                      title={deletingCharacter === character.id ? 'Deleting...' : 'Delete Character'}
-                    >
-                      {deletingCharacter === character.id ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                      {deletingCharacter === character.id ? 'Deleting...' : 'Delete'}
-                    </button>
                   </div>
                 </div>
               ))}
