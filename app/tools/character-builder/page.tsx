@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Save, RotateCcw, Printer, ChevronLeft, Dice6, Upload, Download, Users, Check, X, Edit, Plus, ArrowLeft } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Save, RotateCcw, Printer, ChevronLeft, Dice6, Upload, Download, Users, Check, X, Edit, Plus, ArrowLeft, TrendingUp } from 'lucide-react';
 import { Character, SpeciesChoice, createNewCharacter } from '@/lib/character-data';
 import SpeciesSelection from '@/components/CharacterBuilder/SpeciesSelection';
 import SkillSelection from '@/components/CharacterBuilder/SkillSelection';
 import CharacterList from '@/components/CharacterList';
+import CharacterSheet from '@/components/CharacterSheet';
+import Modal from '@/components/Modal/Modal';
 import { useSupabase } from '@/components/SupabaseProvider';
 import { useCharacters } from '@/hooks/useCharacters';
 
@@ -71,8 +74,9 @@ function EquipmentStepNormal({ character, setCharacter }: {
 }
 
 export default function CharacterBuilderPage() {
+  const searchParams = useSearchParams();
   const { user } = useSupabase();
-  const { saveCharacter, loading: charactersLoading, fetchCharacters } = useCharacters();
+  const { saveCharacter, loading: charactersLoading, fetchCharacters, characters } = useCharacters();
   const [character, setCharacter] = useState<Character>(createNewCharacter());
   const [currentCharacterId, setCurrentCharacterId] = useState<string | null>(null);
   const [characteristicMethod, setCharacteristicMethod] = useState<'roll' | 'pointbuy' | null>(null);
@@ -86,8 +90,44 @@ export default function CharacterBuilderPage() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importData, setImportData] = useState('');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
 
   const isAdvancedMode = characterMode === 'advanced';
+
+  // Handle URL parameters for edit mode
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    const step = searchParams.get('step');
+    
+    if (editId && !charactersLoading) {
+      const charToEdit = characters.find(c => c.id === editId);
+      if (charToEdit) {
+        const loadedChar = charToEdit as any as Character;
+        setCharacter(loadedChar);
+        setCurrentCharacterId(editId);
+        setCharacterMode('advanced');
+        
+        // Set the step if specified, default to characteristics for edit
+        if (step === 'characteristics' || !step) {
+          setCharacter(prev => ({ ...prev, currentStep: 'characteristics' }));
+        }
+        
+        // Set up point buy stats if they exist
+        if (loadedChar.characteristics.STR > 0) {
+          setPointBuyStats({
+            STR: loadedChar.characteristics.STR,
+            CON: loadedChar.characteristics.CON,
+            SIZ: loadedChar.characteristics.SIZ,
+            INT: loadedChar.characteristics.INT,
+            ACU: loadedChar.characteristics.ACU,
+            DEX: loadedChar.characteristics.DEX,
+            SOC: loadedChar.characteristics.SOC
+          });
+          setCharacteristicMethod('pointbuy');
+        }
+      }
+    }
+  }, [searchParams, characters, charactersLoading]);
 
   useEffect(() => {
     const saved = localStorage.getItem('sagaborn-character');
@@ -1111,402 +1151,21 @@ export default function CharacterBuilderPage() {
             )}
             
             {character.currentStep === 'complete' && (
-              <div className="character-complete bg-slate-900 p-8 rounded-lg border border-slate-800 text-center print:bg-white print:text-black print:border-black print:shadow-none print:rounded-none">
-                <h2 className="text-2xl font-semibold text-white mb-4 print:text-black print:text-center print:text-3xl print:font-bold print:border-b-2 print:border-black print:pb-2 print:mb-6">
-                  SagaBorn D100 Character Sheet
-                </h2>
-                <p className="text-slate-400 mb-6 print:hidden">
-                  Your character {character.name} is ready for adventure! You can print your character sheet or save it for later.
-                </p>
+              <div className="character-complete">
+                <CharacterSheet
+                  character={character}
+                  onEdit={() => {
+                    setCharacter({ ...character, currentStep: 'characteristics' });
+                    setCharacteristicMethod(null);
+                  }}
+                  onSave={() => saveCharacterToDatabase()}
+                  onPrint={printCharacter}
+                  onCreateNew={handleCreateNew}
+                  onLevelUp={() => setShowLevelUpModal(true)}
+                  isSaving={charactersLoading}
+                  saveSuccess={saveSuccess}
+                />
                 
-                {/* Print-only character sheet layout */}
-                <div className="print:block hidden print:text-left">
-                  {/* Header Section */}
-                  <div className="grid grid-cols-2 gap-8 mb-6 print:border-b print:border-black print:pb-4">
-                    <div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-bold">Character Name:</label>
-                        <div className="text-xl font-bold border-b border-black pb-1">{character.name}</div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-bold">Species:</label>
-                          <div className="border-b border-black pb-1">{character.species}</div>
-                        </div>
-                        {character.biology && (
-                          <div>
-                            <label className="block text-sm font-bold">Biology:</label>
-                            <div className="border-b border-black pb-1">{character.biology}</div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 mt-3">
-                        {character.culture && (
-                          <div>
-                            <label className="block text-sm font-bold">Culture:</label>
-                            <div className="border-b border-black pb-1">{character.culture}</div>
-                          </div>
-                        )}
-                        {character.profession && (
-                          <div>
-                            <label className="block text-sm font-bold">Profession:</label>
-                            <div className="border-b border-black pb-1">{character.profession}</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      {character.archetype && (
-                        <div className="mb-3">
-                          <label className="block text-sm font-bold">Archetype:</label>
-                          <div className="text-xl font-bold border-b border-black pb-1">{character.archetype}</div>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-bold">Height:</label>
-                          <div className="border-b border-black pb-1">{character.height}</div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold">Weight:</label>
-                          <div className="border-b border-black pb-1">{character.weight}</div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 mt-3">
-                        <div>
-                          <label className="block text-sm font-bold">Avg. Lifespan:</label>
-                          <div className="border-b border-black pb-1">{character.lifespan} years</div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold">Speed:</label>
-                          <div className="border-b border-black pb-1">{character.speed} ft</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Characteristics Section */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold mb-3 border-b border-black">Characteristics</h3>
-                    <div className="grid grid-cols-7 gap-4">
-                      <div className="text-center">
-                        <label className="block text-sm font-bold">STR</label>
-                        <div className="w-16 h-16 border-2 border-black rounded flex items-center justify-center text-2xl font-bold mx-auto">
-                          {character.characteristics.STR}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <label className="block text-sm font-bold">CON</label>
-                        <div className="w-16 h-16 border-2 border-black rounded flex items-center justify-center text-2xl font-bold mx-auto">
-                          {character.characteristics.CON}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <label className="block text-sm font-bold">SIZ</label>
-                        <div className="w-16 h-16 border-2 border-black rounded flex items-center justify-center text-2xl font-bold mx-auto">
-                          {character.characteristics.SIZ}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <label className="block text-sm font-bold">INT</label>
-                        <div className="w-16 h-16 border-2 border-black rounded flex items-center justify-center text-2xl font-bold mx-auto">
-                          {character.characteristics.INT}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <label className="block text-sm font-bold">ACU</label>
-                        <div className="w-16 h-16 border-2 border-black rounded flex items-center justify-center text-2xl font-bold mx-auto">
-                          {character.characteristics.ACU}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <label className="block text-sm font-bold">DEX</label>
-                        <div className="w-16 h-16 border-2 border-black rounded flex items-center justify-center text-2xl font-bold mx-auto">
-                          {character.characteristics.DEX}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <label className="block text-sm font-bold">SOC</label>
-                        <div className="w-16 h-16 border-2 border-black rounded flex items-center justify-center text-2xl font-bold mx-auto">
-                          {character.characteristics.SOC}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Derived Stats Section */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold mb-3 border-b border-black">Derived Statistics</h3>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="border border-black p-2 text-center">
-                        <label className="block text-sm font-bold">Hit Points</label>
-                        <div className="text-3xl font-bold">{character.derivedStats.hitPoints}</div>
-                        <div className="text-xs">Current: ___</div>
-                      </div>
-                      <div className="border border-black p-2 text-center">
-                        <label className="block text-sm font-bold">Spirit Points</label>
-                        <div className="text-3xl font-bold">{character.derivedStats.spiritPoints}</div>
-                        <div className="text-xs">Current: ___</div>
-                      </div>
-                      <div className="border border-black p-2 text-center">
-                        <label className="block text-sm font-bold">Effort</label>
-                        <div className="text-2xl font-bold">{character.derivedStats.effort}</div>
-                      </div>
-                      <div className="border border-black p-2 text-center">
-                        <label className="block text-sm font-bold">Stamina</label>
-                        <div className="text-2xl font-bold">{character.derivedStats.stamina}</div>
-                      </div>
-                      <div className="border border-black p-2 text-center">
-                        <label className="block text-sm font-bold">Intellect</label>
-                        <div className="text-2xl font-bold">{character.derivedStats.intellect}</div>
-                      </div>
-                      <div className="border border-black p-2 text-center">
-                        <label className="block text-sm font-bold">Spirit</label>
-                        <div className="text-2xl font-bold">{character.derivedStats.spirit}</div>
-                      </div>
-                      <div className="border border-black p-2 text-center">
-                        <label className="block text-sm font-bold">Agility</label>
-                        <div className="text-2xl font-bold">{character.derivedStats.agility}</div>
-                      </div>
-                      <div className="border border-black p-2 text-center">
-                        <label className="block text-sm font-bold">Charm</label>
-                        <div className="text-2xl font-bold">{character.derivedStats.charm}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Skills Section */}
-                  {Object.keys(character.skills).length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-bold mb-3 border-b border-black">Skills</h3>
-                      <div className="grid grid-cols-3 gap-2">
-                        {Object.entries(character.skills)
-                          .filter(([_, value]) => value > 0)
-                          .sort(([a], [b]) => a.localeCompare(b))
-                          .map(([skill, value]) => (
-                            <div key={skill} className="flex justify-between border-b border-gray-300 py-1">
-                              <span className="font-medium">{skill}</span>
-                              <span className="font-bold">{value}%</span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Special Abilities Section */}
-                  {character.specialAbilities.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-bold mb-3 border-b border-black">Special Abilities</h3>
-                      <div className="space-y-2">
-                        {character.specialAbilities.map((ability, index) => (
-                          <div key={index} className="border border-black p-2">
-                            <span className="font-bold">• {ability}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Equipment Section */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold mb-3 border-b border-black">Equipment</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Starting equipment and funds */}
-                      <div>
-                        {character.startingEquipment.length > 0 && (
-                          <div className="mb-4">
-                            <h4 className="text-sm font-bold mb-2">Starting Equipment:</h4>
-                            <div className="space-y-1">
-                              {character.startingEquipment.map((item, index) => (
-                                <div key={index} className="text-sm border-b border-gray-300 py-1">• {item}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div>
-                          <h4 className="text-sm font-bold mb-2">
-                            Starting Funds: {character.startingFundsAmount > 0 ? `${character.startingFundsAmount} gp` : 'None'}
-                          </h4>
-                          <div className="border border-black p-2 h-16">
-                            <label className="block text-xs font-bold">Current Funds:</label>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Equipment list with blank lines */}
-                      <div>
-                        <h4 className="text-sm font-bold mb-2">Equipment List:</h4>
-                        <div className="space-y-1">
-                          {[...Array(20)].map((_, i) => (
-                            <div key={i} className="border-b border-gray-300 pb-1 mb-1 h-4"></div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Notes Section */}
-                  <div className="mt-6">
-                    <h3 className="text-lg font-bold mb-3 border-b border-black">Notes</h3>
-                    <div className="border border-black p-4 min-h-32">
-                      <div className="space-y-4">
-                        {[...Array(8)].map((_, i) => (
-                          <div key={i} className="border-b border-gray-300 pb-1 mb-3"></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Screen-only summary (existing design) */}
-                <div className="bg-slate-800 p-6 rounded-lg text-left print:hidden">
-                  <h3 className="text-lg font-semibold text-white mb-4">Character Summary</h3>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="mb-2"><span className="text-slate-400">Name:</span> <span className="text-white">{character.name}</span></div>
-                      <div className="mb-2"><span className="text-slate-400">Species:</span> <span className="text-white">{character.species}</span></div>
-                      {character.biology && (
-                        <div className="mb-2"><span className="text-slate-400">Biology:</span> <span className="text-white">{character.biology}</span></div>
-                      )}
-                      {character.culture && (
-                        <div className="mb-2"><span className="text-slate-400">Culture:</span> <span className="text-white">{character.culture}</span></div>
-                      )}
-                      {character.profession && (
-                        <div className="mb-2"><span className="text-slate-400">Profession:</span> <span className="text-white">{character.profession}</span></div>
-                      )}
-                      {character.archetype && (
-                        <div className="mb-2"><span className="text-slate-400">Archetype:</span> <span className="text-white">{character.archetype}</span></div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="mb-2"><span className="text-slate-400">Hit Points:</span> <span className="text-white">{character.derivedStats.hitPoints}</span></div>
-                      <div className="mb-2"><span className="text-slate-400">Spirit Points:</span> <span className="text-white">{character.derivedStats.spiritPoints}</span></div>
-                      <div className="mb-2"><span className="text-slate-400">Height:</span> <span className="text-white">{character.height}</span></div>
-                      <div className="mb-2"><span className="text-slate-400">Weight:</span> <span className="text-white">{character.weight}</span></div>
-                      <div className="mb-2"><span className="text-slate-400">Avg. Lifespan:</span> <span className="text-white">{character.lifespan} years</span></div>
-                      <div className="mb-2"><span className="text-slate-400">Speed:</span> <span className="text-white">{character.speed} ft</span></div>
-                      {character.startingFundsAmount > 0 && (
-                        <div className="mb-2"><span className="text-slate-400">Starting Funds:</span> <span className="text-white">{character.startingFundsAmount} gp</span></div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 grid grid-cols-4 gap-2 text-center">
-                    <div><div className="text-slate-400 text-xs">Effort</div><div className="text-white font-semibold">{character.derivedStats.effort}</div></div>
-                    <div><div className="text-slate-400 text-xs">Stamina</div><div className="text-white font-semibold">{character.derivedStats.stamina}</div></div>
-                    <div><div className="text-slate-400 text-xs">Intellect</div><div className="text-white font-semibold">{character.derivedStats.intellect}</div></div>
-                    <div><div className="text-slate-400 text-xs">Spirit</div><div className="text-white font-semibold">{character.derivedStats.spirit}</div></div>
-                    <div><div className="text-slate-400 text-xs">Agility</div><div className="text-white font-semibold">{character.derivedStats.agility}</div></div>
-                    <div><div className="text-slate-400 text-xs">Charm</div><div className="text-white font-semibold">{character.derivedStats.charm}</div></div>
-                  </div>
-                  
-                  {character.startingEquipment.length > 0 && (
-                    <div className="mt-4">
-                      <div className="text-slate-400 text-xs mb-1">Starting Equipment:</div>
-                      {character.startingEquipment.map((item, index) => (
-                        <div key={index} className="text-green-300 text-xs">• {item}</div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {character.specialAbilities.length > 0 && (
-                    <div className="mt-4">
-                      <div className="text-slate-400 text-xs mb-1">Special Abilities:</div>
-                      {character.specialAbilities.map((ability, index) => (
-                        <div key={index} className="text-blue-300 text-xs">• {ability}</div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {Object.keys(character.skills).length > 0 && (
-                    <div className="mt-4">
-                      <div className="text-slate-400 text-xs mb-1">Skills:</div>
-                      <div className="grid grid-cols-2 gap-1">
-                        {Object.entries(character.skills)
-                          .filter(([_, value]) => value > 0)
-                          .sort(([a], [b]) => a.localeCompare(b))
-                          .map(([skill, value]) => (
-                            <div key={skill} className="text-green-300 text-xs">
-                              {skill} {value}%
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-6 flex gap-4 justify-center flex-wrap print:hidden">
-                  <button
-                    onClick={() => {
-                      setCharacter({ ...character, currentStep: 'characteristics' });
-                      // Reset method to allow re-selection
-                      setCharacteristicMethod(null);
-                    }}
-                    className="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    <Edit className="w-5 h-5" />
-                    Edit Characteristics
-                  </button>
-                  <button
-                    onClick={printCharacter}
-                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Printer className="w-5 h-5" />
-                    Print Character Sheet
-                  </button>
-                  <button
-                    onClick={() => saveCharacterToDatabase()}
-                    disabled={charactersLoading}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
-                      saveSuccess
-                        ? 'bg-green-700 text-white'
-                        : 'bg-green-600 text-white hover:bg-green-700'
-                    } disabled:opacity-50`}
-                  >
-                    {saveSuccess ? (
-                      <><Check className="w-5 h-5" /> Character Saved!</>
-                    ) : charactersLoading ? (
-                      <><Save className="w-5 h-5 animate-spin" /> Saving...</>
-                    ) : (
-                      <><Save className="w-5 h-5" /> {user ? 'Save to Cloud' : 'Log In to Save'}</>
-                    )}
-                  </button>
-                  {user && (
-                    <button
-                      onClick={handleCreateNew}
-                      className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Plus className="w-5 h-5" />
-                      Create Another
-                    </button>
-                  )}
-                </div>
-                
-                {/* Advanced section */}
-                <div className="mt-6 print:hidden">
-                  <div className="flex items-center justify-center mb-3">
-                    <div className="flex-1 h-px bg-slate-700"></div>
-                    <span className="px-3 text-xs text-slate-500 uppercase tracking-wider">Advanced</span>
-                    <div className="flex-1 h-px bg-slate-700"></div>
-                  </div>
-                  <div className="flex gap-4 justify-center">
-                    <button
-                      onClick={handleExportCharacter}
-                      className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 hover:text-white transition-colors text-sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      Export JSON
-                    </button>
-                    <button
-                      onClick={() => setImportModalOpen(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 hover:text-white transition-colors text-sm"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Import JSON
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
           </div>
@@ -1629,6 +1288,30 @@ export default function CharacterBuilderPage() {
             </div>
           </div>
         )}
+
+        {/* Level Up Modal */}
+        <Modal
+          isOpen={showLevelUpModal}
+          onClose={() => setShowLevelUpModal(false)}
+          title="Level Up - Coming Soon!"
+          size="sm"
+        >
+          <div className="text-center py-4">
+            <div className="text-6xl mb-4">🎲</div>
+            <p className="text-white text-lg mb-2">
+              The Level Up feature is coming soon!
+            </p>
+            <p className="text-slate-400">
+              You'll be able to advance your character, gain new skills, and increase your abilities.
+            </p>
+            <button
+              onClick={() => setShowLevelUpModal(false)}
+              className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Got it!
+            </button>
+          </div>
+        </Modal>
 
         {/* Import Modal */}
         {importModalOpen && (

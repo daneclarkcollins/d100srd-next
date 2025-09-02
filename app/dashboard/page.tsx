@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSupabase } from '@/components/SupabaseProvider'
 import { useCharacters } from '@/hooks/useCharacters'
-import { Play, CheckCircle, Download, Trash2 } from 'lucide-react'
+import { Play, CheckCircle, Download, Trash2, Edit, TrendingUp } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
+import Modal from '@/components/Modal/Modal'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
   const [deletingCharacter, setDeletingCharacter] = useState<string | null>(null)
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false)
 
   useEffect(() => {
     if (!user && !loading) {
@@ -160,44 +162,65 @@ export default function DashboardPage() {
                     )}
                   </div>
                   
-                  {character.derived_stats && (
+                  {(character as any).derived_stats && (
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-300 mb-4">
-                      <div>HP: {character.derived_stats.hitPoints}</div>
-                      <div>SP: {character.derived_stats.spiritPoints}</div>
+                      <div>HP: {(character as any).derived_stats.hitPoints}</div>
+                      <div>SP: {(character as any).derived_stats.spiritPoints}</div>
                     </div>
                   )}
                   
                   <div className="flex flex-col gap-2">
-                    <Link
-                      href={`/tools/character-builder?load=${character.id}`}
-                      className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-                    >
-                      <Play className="w-4 h-4" />
-                      Load
-                    </Link>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link
+                        href={`/tools/character-sheet?id=${character.id}`}
+                        className="flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                        title="View Character Sheet"
+                      >
+                        <Play className="w-4 h-4" />
+                        Load
+                      </Link>
+                      <Link
+                        href={`/tools/character-builder?edit=${character.id}&step=characteristics`}
+                        className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-600 text-white rounded text-sm hover:bg-slate-700 transition-colors"
+                        title="Edit Character"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Edit
+                      </Link>
+                    </div>
 
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setShowLevelUpModal(true)}
+                        className="flex items-center justify-center gap-1 px-3 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors"
+                        title="Level Up Character"
+                      >
+                        <TrendingUp className="w-4 h-4" />
+                        Level Up
+                      </button>
                       <button
                         onClick={() => handleExportCharacter(character)}
-                        className="flex items-center justify-center flex-1 px-3 py-2 h-10 bg-slate-600 text-white rounded text-sm hover:bg-slate-500 transition-colors"
+                        className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-600 text-white rounded text-sm hover:bg-slate-500 transition-colors"
                         title="Export Character"
                       >
                         <Download className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteCharacter(character.id, character.name)}
-                        disabled={deletingCharacter === character.id}
-                        className="flex items-center justify-center flex-1 px-3 py-2 h-10 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
-                        title={deletingCharacter === character.id ? 'Deleting...' : 'Delete Character'}
-                      >
-                        {deletingCharacter === character.id ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
+                        Export
                       </button>
                     </div>
+
+                    <button
+                      onClick={() => handleDeleteCharacter(character.id, character.name)}
+                      disabled={deletingCharacter === character.id}
+                      className="flex items-center justify-center gap-1 w-full px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
+                      title={deletingCharacter === character.id ? 'Deleting...' : 'Delete Character'}
+                    >
+                      {deletingCharacter === character.id ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      {deletingCharacter === character.id ? 'Deleting...' : 'Delete'}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -250,6 +273,30 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Level Up Modal */}
+      <Modal
+        isOpen={showLevelUpModal}
+        onClose={() => setShowLevelUpModal(false)}
+        title="Level Up - Coming Soon!"
+        size="sm"
+      >
+        <div className="text-center py-4">
+          <div className="text-6xl mb-4">🎲</div>
+          <p className="text-white text-lg mb-2">
+            The Level Up feature is coming soon!
+          </p>
+          <p className="text-slate-400">
+            You'll be able to advance your character, gain new skills, and increase your abilities.
+          </p>
+          <button
+            onClick={() => setShowLevelUpModal(false)}
+            className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Got it!
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }
