@@ -157,6 +157,57 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
     setAllocation(currentAllocation);
   }
 
+  function maxOutSkill(skill: string) {
+    if (isAdvancedMode) {
+      // In advanced mode, max to 90% or 95% cap
+      const hasSkillAbove90 = Object.keys({ ...skillBaseChances }).some(otherSkill => {
+        if (otherSkill === skill) return false;
+        const otherTotal = calculateTotal(otherSkill);
+        return otherTotal >= 91;
+      });
+      const skillCap = hasSkillAbove90 ? 90 : 95;
+      const base = skillBaseChances[skill] || 0;
+      const categoryBonus = getCategoryBonus(getSkillCategory(skill));
+      const maxPossible = skillCap - base - categoryBonus;
+      
+      if (maxPossible <= 0) return; // Already at or above max
+      
+      const updatedAllocation = { ...allocation };
+      updatedAllocation.professional[skill] = maxPossible;
+      updatedAllocation.personal[skill] = 0;
+      setAllocation(updatedAllocation);
+    } else {
+      // In normal mode, max to 75% or as many points as available
+      const base = skillBaseChances[skill] || 0;
+      const categoryBonus = getCategoryBonus(getSkillCategory(skill));
+      const currentTotal = calculateTotal(skill);
+      const maxPossible = 75 - base - categoryBonus;
+      
+      if (maxPossible <= 0 || currentTotal >= 75) return; // Already at or above max
+      
+      // Check if professional skill is allowed for the current mode
+      if (mode === 'professional' && !characterProfessionSkills.includes(skill)) return;
+      
+      const currentSpent = mode === 'professional' ? professionalSpent : personalSpent;
+      const maxPoints = mode === 'professional' ? professionalPoints : personalPoints;
+      const remainingPoints = maxPoints - currentSpent;
+      
+      const otherModeAlloc = mode === 'professional' 
+        ? (allocation.personal[skill] || 0)
+        : (allocation.professional[skill] || 0);
+      
+      const currentModeAlloc = allocation[mode][skill] || 0;
+      const neededForMax = maxPossible - otherModeAlloc;
+      const actualIncrease = Math.min(neededForMax - currentModeAlloc, remainingPoints);
+      
+      if (actualIncrease <= 0) return; // Can't improve
+      
+      const updatedAllocation = { ...allocation };
+      updatedAllocation[mode][skill] = currentModeAlloc + actualIncrease;
+      setAllocation(updatedAllocation);
+    }
+  }
+
   function adjustAdvancedSkillPoints(skill: string, delta: number) {
     // In advanced mode, we track points with 90%/95% percentage caps (not allocation caps)
     const currentAllocation = { ...allocation };
@@ -378,6 +429,12 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
                             >
                               +5
                             </button>
+                            <button
+                              onClick={() => maxOutSkill(skill)}
+                              className="w-10 h-6 bg-purple-700 hover:bg-purple-600 disabled:opacity-30 disabled:cursor-not-allowed rounded text-white text-xs"
+                            >
+                              Max
+                            </button>
                           </div>
                         </div>
                       ) : (
@@ -428,6 +485,13 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
                             >
                               +5
                             </button>
+                            <button
+                              onClick={() => maxOutSkill(skill)}
+                              disabled={isDisabled || total >= 75}
+                              className="w-10 h-6 bg-purple-700 hover:bg-purple-600 disabled:opacity-30 disabled:cursor-not-allowed rounded text-white text-xs"
+                            >
+                              Max
+                            </button>
                           </div>
                         </div>
                       )}
@@ -455,8 +519,8 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
           className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isAdvancedMode 
-            ? 'Complete Character' 
-            : `Complete Character (${professionalSpent}/${professionalPoints} Prof, ${personalSpent}/${personalPoints} Pers)`
+            ? 'Next: Equipment' 
+            : `Next: Equipment (${professionalSpent}/${professionalPoints} Prof, ${personalSpent}/${personalPoints} Pers)`
           }
         </button>
       </div>

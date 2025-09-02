@@ -18,6 +18,166 @@ body {
   color: var(--foreground);
 }
 
+/* Print Styles for Character Sheet */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+  
+  .character-complete {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+  
+  .print\:block {
+    display: block !important;
+  }
+  
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  .print\:text-black {
+    color: black !important;
+  }
+  
+  .print\:bg-white {
+    background-color: white !important;
+  }
+  
+  .print\:border-black {
+    border-color: black !important;
+  }
+  
+  .print\:text-left {
+    text-align: left !important;
+  }
+  
+  .print\:text-center {
+    text-align: center !important;
+  }
+  
+  .print\:text-3xl {
+    font-size: 1.875rem !important;
+  }
+  
+  .print\:font-bold {
+    font-weight: bold !important;
+  }
+  
+  .print\:border-b-2 {
+    border-bottom-width: 2px !important;
+  }
+  
+  .print\:pb-2 {
+    padding-bottom: 0.5rem !important;
+  }
+  
+  .print\:mb-6 {
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .print\:border-b {
+    border-bottom-width: 1px !important;
+  }
+  
+  .print\:pb-4 {
+    padding-bottom: 1rem !important;
+  }
+  
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+  
+  .print\:rounded-none {
+    border-radius: 0 !important;
+  }
+  
+  /* Ensure characteristic boxes print correctly */
+  .w-16.h-16.border-2.border-black {
+    width: 4rem !important;
+    height: 4rem !important;
+    border: 2px solid black !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.5rem !important;
+    font-weight: bold !important;
+  }
+  
+  /* Print page break control */
+  .page-break-before-always {
+    page-break-before: always;
+  }
+  
+  .page-break-after-always {
+    page-break-after: always;
+  }
+  
+  .page-break-inside-avoid {
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure good contrast and readability */
+  * {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Hide browser print artifacts */
+  @page {
+    margin: 0.5in;
+    size: letter;
+  }
+  
+  /* Make sure grids work in print */
+  .grid {
+    display: grid !important;
+  }
+  
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  
+  .grid-cols-7 {
+    grid-template-columns: repeat(7, 1fr) !important;
+  }
+  
+  .gap-2 {
+    gap: 0.5rem !important;
+  }
+  
+  .gap-4 {
+    gap: 1rem !important;
+  }
+  
+  .gap-6 {
+    gap: 1.5rem !important;
+  }
+  
+  .gap-8 {
+    gap: 2rem !important;
+  }
+}
+
 /* MDX/Prose Styling */
 .prose {
   @apply text-slate-300;

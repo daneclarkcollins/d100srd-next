@@ -33,53 +33,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <div className="bg-slate-900 p-6 rounded-lg border border-slate-800">
-            <div className="text-3xl mb-3">📖</div>
-            <h3 className="text-xl font-semibold text-white mb-3">Core Rules</h3>
-            <p className="text-slate-400 mb-4 text-sm">
-              Character creation, basic mechanics, combat system, and fundamental gameplay rules.
-            </p>
-            <Link href="/rules" className="text-blue-400 hover:text-blue-300 font-medium text-sm">
-              Browse Rules →
-            </Link>
-          </div>
-          
-          <div className="bg-slate-900 p-6 rounded-lg border border-slate-800">
-            <div className="text-3xl mb-3">✨</div>
-            <h3 className="text-xl font-semibold text-white mb-3">Magic & Spells</h3>
-            <p className="text-slate-400 mb-4 text-sm">
-              Complete spell list with mana-based casting system and magical effects.
-            </p>
-            <Link href="/spells" className="text-blue-400 hover:text-blue-300 font-medium text-sm">
-              View Spells →
-            </Link>
-          </div>
-          
-          <div className="bg-slate-900 p-6 rounded-lg border border-slate-800">
-            <div className="text-3xl mb-3">⚔️</div>
-            <h3 className="text-xl font-semibold text-white mb-3">Equipment</h3>
-            <p className="text-slate-400 mb-4 text-sm">
-              Weapons, armor, and gear for adventures in the world of SagaBorn.
-            </p>
-            <Link href="/equipment" className="text-blue-400 hover:text-blue-300 font-medium text-sm">
-              View Equipment →
-            </Link>
-          </div>
-          
-          <div className="bg-slate-900 p-6 rounded-lg border border-slate-800">
-            <div className="text-3xl mb-3">🛠️</div>
-            <h3 className="text-xl font-semibold text-white mb-3">Tools</h3>
-            <p className="text-slate-400 mb-4 text-sm">
-              Interactive character builder and gameplay utilities.
-            </p>
-            <Link href="/tools" className="text-blue-400 hover:text-blue-300 font-medium text-sm">
-              Use Tools →
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 mt-16">
           <div className="bg-slate-900 p-8 rounded-lg border border-slate-800">
             <h2 className="text-2xl font-semibold text-white mb-4">About SagaBorn D100</h2>
             <p className="text-slate-400 mb-4">

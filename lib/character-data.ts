@@ -54,6 +54,7 @@ export interface Character {
   specialAbilities: string[];
   startingEquipment: string[];
   startingFunds: string;
+  startingFundsAmount: number;
   currentStep: string;
 }
 
@@ -217,13 +218,14 @@ export const createNewCharacter = (): Character => ({
     movementSpeed: 25, horrorResistance: 0
   },
   skills: {},
-  lifespan: 65,
-  height: "5' 8\"",
-  weight: "180 lb",
-  speed: 30,
+  lifespan: 0,
+  height: "",
+  weight: "",
+  speed: 0,
   specialAbilities: [],
   startingEquipment: [],
   startingFunds: '',
+  startingFundsAmount: 0,
   currentStep: 'species'
 });
 

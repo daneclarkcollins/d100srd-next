@@ -36,12 +36,20 @@ export default function AuthButton() {
 
   if (!user) {
     return (
-      <Link
-        href="/login"
-        className="inline-flex items-center px-4 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-400 bg-transparent hover:bg-blue-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-950 transition-colors"
-      >
-        Log In
-      </Link>
+      <div className="flex items-center gap-3">
+        <Link
+          href="/signup"
+          className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-950 transition-colors"
+        >
+          Create Account
+        </Link>
+        <Link
+          href="/login"
+          className="inline-flex items-center px-4 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-400 bg-transparent hover:bg-blue-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-950 transition-colors"
+        >
+          Log In
+        </Link>
+      </div>
     )
   }
 

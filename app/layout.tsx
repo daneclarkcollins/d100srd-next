@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation/Navigation";
 import SupabaseProvider from "@/components/SupabaseProvider";
+import { CharacterProvider } from "@/contexts/CharacterContext";
+import CharacterQuickStats from "@/components/CharacterQuickStats";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,13 +35,16 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <SupabaseProvider>
-          <Navigation />
-          <main>{children}</main>
-          <footer className="border-t border-slate-800 bg-slate-950 py-8">
-            <div className="container mx-auto px-4 text-center text-slate-400">
-              <p>&copy; 2025 SagaBorn RPG. All rights reserved.</p>
-            </div>
-          </footer>
+          <CharacterProvider>
+            <Navigation />
+            <main>{children}</main>
+            <CharacterQuickStats />
+            <footer className="border-t border-slate-800 bg-slate-950 py-8">
+              <div className="container mx-auto px-4 text-center text-slate-400">
+                <p>&copy; 2025 SagaBorn RPG. All rights reserved.</p>
+              </div>
+            </footer>
+          </CharacterProvider>
         </SupabaseProvider>
       </body>
     </html>

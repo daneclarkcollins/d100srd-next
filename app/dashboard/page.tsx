@@ -4,13 +4,17 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSupabase } from '@/components/SupabaseProvider'
+import { useCharacters } from '@/hooks/useCharacters'
+import { Play, CheckCircle, Download, Trash2 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { supabase, user } = useSupabase()
+  const { characters, loading: charactersLoading, deleteCharacter, setActiveCharacter, toCharacter } = useCharacters()
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
+  const [deletingCharacter, setDeletingCharacter] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user && !loading) {
@@ -23,6 +27,43 @@ export default function DashboardPage() {
     setSigningOut(true)
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  const handleDeleteCharacter = async (characterId: string, characterName: string) => {
+    if (!confirm(`Are you sure you want to delete "${characterName}"? This cannot be undone.`)) {
+      return
+    }
+
+    setDeletingCharacter(characterId)
+    try {
+      await deleteCharacter(characterId)
+    } catch (err) {
+      console.error('Failed to delete character:', err)
+      alert('Failed to delete character. Please try again.')
+    } finally {
+      setDeletingCharacter(null)
+    }
+  }
+
+  const handleSetActive = async (characterId: string) => {
+    try {
+      await setActiveCharacter(characterId)
+    } catch (err) {
+      console.error('Failed to set active character:', err)
+    }
+  }
+
+  const handleExportCharacter = (character: any) => {
+    const charData = toCharacter(character)
+    const dataStr = JSON.stringify(charData, null, 2)
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
+    
+    const exportFileDefaultName = `${charData.name || 'character'}.json`
+    
+    const linkElement = document.createElement('a')
+    linkElement.setAttribute('href', dataUri)
+    linkElement.setAttribute('download', exportFileDefaultName)
+    linkElement.click()
   }
 
   if (loading) {
@@ -63,33 +104,109 @@ export default function DashboardPage() {
 
         {/* Characters Section */}
         <div className="bg-slate-800 rounded-lg shadow-xl p-6 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Your Characters</h2>
-          
-          {/* Empty State */}
-          <div className="text-center py-12">
-            <div className="mx-auto h-24 w-24 text-gray-600 mb-4">
-              <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-white mb-2">No characters yet</h3>
-            <p className="text-gray-400 mb-6">
-              Create your first SagaBorn character to begin your adventure
-            </p>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Your Characters</h2>
             <Link
               href="/tools/character-builder"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-800 transition-colors"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-800 transition-colors"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
-              Create Your First Character
+              New Character
             </Link>
           </div>
+          
+          {charactersLoading ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400">Loading characters...</div>
+            </div>
+          ) : characters.length === 0 ? (
+            /* Empty State */
+            <div className="text-center py-12">
+              <div className="mx-auto h-24 w-24 text-gray-600 mb-4">
+                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-white mb-2">No characters yet</h3>
+              <p className="text-gray-400 mb-6">
+                Create your first SagaBorn character to begin your adventure
+              </p>
+            </div>
+          ) : (
+            /* Characters Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {characters.map((character) => (
+                <div key={character.id} className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{character.name}</h3>
+                      <p className="text-sm text-gray-400">
+                        {character.species} {character.profession && `• ${character.profession}`}
+                      </p>
+                    </div>
+                    {character.is_active ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleSetActive(character.id)}
+                        className="text-xs text-blue-400 hover:text-blue-300 underline"
+                      >
+                        Set Active
+                      </button>
+                    )}
+                  </div>
+                  
+                  {character.derived_stats && (
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-300 mb-4">
+                      <div>HP: {character.derived_stats.hitPoints}</div>
+                      <div>SP: {character.derived_stats.spiritPoints}</div>
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      href={`/tools/character-builder?load=${character.id}`}
+                      className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      <Play className="w-4 h-4" />
+                      Load
+                    </Link>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleExportCharacter(character)}
+                        className="flex items-center justify-center flex-1 px-3 py-2 h-10 bg-slate-600 text-white rounded text-sm hover:bg-slate-500 transition-colors"
+                        title="Export Character"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteCharacter(character.id, character.name)}
+                        disabled={deletingCharacter === character.id}
+                        className="flex items-center justify-center flex-1 px-3 py-2 h-10 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
+                        title={deletingCharacter === character.id ? 'Deleting...' : 'Delete Character'}
+                      >
+                        {deletingCharacter === character.id ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link
             href="/rules"
             className="bg-slate-800 rounded-lg shadow-xl p-6 hover:bg-slate-700 transition-colors group"
@@ -106,27 +223,6 @@ export default function DashboardPage() {
                 </h3>
                 <p className="text-gray-400 text-sm">
                   Reference the complete SagaBorn ruleset
-                </p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/classes"
-            className="bg-slate-800 rounded-lg shadow-xl p-6 hover:bg-slate-700 transition-colors group"
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg className="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-white group-hover:text-green-400 transition-colors">
-                  Explore Classes
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  Learn about different character archetypes
                 </p>
               </div>
             </div>

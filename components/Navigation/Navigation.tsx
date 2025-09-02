@@ -4,22 +4,29 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthButton from "@/components/auth/AuthButton";
-
-const navItems = [
-  { name: "Home", href: "/" },
-  { name: "Rules", href: "/rules" },
-  { name: "Classes", href: "/classes" },
-  { name: "Equipment", href: "/equipment" },
-  { name: "Spells", href: "/spells" },
-  { name: "Tools", href: "/tools" },
-];
+import { useCharacterContext } from "@/contexts/CharacterContext";
+import { useSupabase } from "@/components/SupabaseProvider";
+import { Dice6, User } from "lucide-react";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { activeCharacter } = useCharacterContext();
+  const { user } = useSupabase();
+
+  // Dynamic navigation items based on authentication status
+  const navItems = [
+    { name: "Home", href: user ? "/dashboard" : "/" },
+    { name: "SRD", href: "/rules" },
+    { name: "Character Builder", href: "/tools/character-builder" },
+    { name: "Dice Roller", href: "/tools/dice-roller", icon: Dice6 },
+    { name: "Tools", href: "/tools" },
+  ];
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/" && !user) return pathname === "/";
+    if (href === "/dashboard" && user) return pathname === "/dashboard";
+    if (href === "/" || href === "/dashboard") return pathname === href;
     return pathname.startsWith(href);
   };
 
@@ -27,7 +34,7 @@ export default function Navigation() {
     <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="text-xl font-bold text-white">
+          <Link href={user ? "/dashboard" : "/"} className="text-xl font-bold text-white">
             SagaBorn <span className="text-blue-400">D100</span>
           </Link>
 
@@ -36,15 +43,26 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                className={`px-3 py-2 text-sm font-medium transition-colors flex items-center gap-2 ${
                   isActive(item.href)
                     ? "text-blue-400 border-b-2 border-blue-400"
                     : "text-slate-300 hover:text-white"
                 }`}
               >
+                {item.icon && <item.icon className="w-4 h-4" />}
                 {item.name}
               </Link>
             ))}
+            
+            {activeCharacter && (
+              <div className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 border-l border-slate-700">
+                <User className="w-4 h-4" />
+                <span className="font-medium text-blue-400">
+                  {activeCharacter.name}
+                </span>
+              </div>
+            )}
+            
             <AuthButton />
           </div>
 
@@ -80,17 +98,27 @@ export default function Navigation() {
 
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-slate-800">
+            {activeCharacter && (
+              <div className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 border-b border-slate-700 mb-2">
+                <User className="w-4 h-4" />
+                <span className="font-medium text-blue-400">
+                  {activeCharacter.name}
+                </span>
+              </div>
+            )}
+            
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`block px-3 py-2 text-base font-medium transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 text-base font-medium transition-colors ${
                   isActive(item.href)
                     ? "text-blue-400 bg-slate-800"
                     : "text-slate-300 hover:text-white hover:bg-slate-800"
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
+                {item.icon && <item.icon className="w-4 h-4" />}
                 {item.name}
               </Link>
             ))}

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSupabase } from '@/components/SupabaseProvider'
+import { Eye, EyeOff, RefreshCw } from 'lucide-react'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -15,6 +16,36 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const generatePassword = () => {
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz'
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const numbers = '0123456789'
+    const symbols = '!@#$%^&*'
+    const allChars = lowercase + uppercase + numbers + symbols
+    
+    // Ensure at least one of each type
+    let generatedPassword = ''
+    generatedPassword += lowercase[Math.floor(Math.random() * lowercase.length)]
+    generatedPassword += uppercase[Math.floor(Math.random() * uppercase.length)]
+    generatedPassword += numbers[Math.floor(Math.random() * numbers.length)]
+    generatedPassword += symbols[Math.floor(Math.random() * symbols.length)]
+    
+    // Fill the rest randomly to reach 12 characters
+    for (let i = 4; i < 12; i++) {
+      generatedPassword += allChars[Math.floor(Math.random() * allChars.length)]
+    }
+    
+    // Shuffle the password
+    const shuffled = generatedPassword.split('').sort(() => Math.random() - 0.5).join('')
+    
+    setPassword(shuffled)
+    setConfirmPassword(shuffled)
+    setShowPassword(true)
+    setShowConfirmPassword(true)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,12 +79,15 @@ export default function SignupPage() {
       })
 
       if (error) {
+        console.error('Signup error details:', error)
         if (error.message.includes('already registered')) {
           setError('An account with this email already exists. Please sign in instead.')
         } else if (error.message.includes('Password should')) {
           setError('Password must be at least 6 characters long')
+        } else if (error.message.includes('Database error')) {
+          setError(`Database issue detected: ${error.message}. The account may have been created but some features might not work until this is resolved.`)
         } else {
-          setError(error.message)
+          setError(`Signup error: ${error.message}`)
         }
         return
       }
@@ -66,7 +100,8 @@ export default function SignupPage() {
         }
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
+      console.error('Signup catch block error:', err)
+      setError(`An unexpected error occurred: ${err instanceof Error ? err.message : 'Unknown error'}. Please try again.`)
     } finally {
       setLoading(false)
     }
@@ -165,37 +200,65 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                Password *
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Create a password (min 6 characters)"
-              />
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+                  Password *
+                </label>
+                <button
+                  type="button"
+                  onClick={generatePassword}
+                  className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Generate
+                </button>
+              </div>
+              <div className="relative mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full px-3 py-2 pr-10 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Create a password (min 6 characters)"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300">
                 Confirm Password *
               </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Confirm your password"
-              />
+              <div className="relative mt-1">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="block w-full px-3 py-2 pr-10 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Confirm your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
