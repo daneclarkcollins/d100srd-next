@@ -27,7 +27,15 @@ export default function CharacterSheet({
   saveSuccess = false,
   showActions = true
 }: CharacterSheetProps) {
-  const damageModifier = calculateDamageModifier(character.characteristics.STR + character.characteristics.SIZ);
+  // Handle case where character data might be from database with different property names
+  const characterData = character as any;
+  const derivedStats = characterData.derivedStats || characterData.derived_stats || {};
+  const characteristics = characterData.characteristics || {};
+  const skills = characterData.skills || {};
+  const specialAbilities = characterData.specialAbilities || characterData.special_abilities || [];
+  const startingEquipment = characterData.startingEquipment || characterData.starting_equipment || [];
+  
+  const damageModifier = calculateDamageModifier((characteristics.STR || 0) + (characteristics.SIZ || 0));
 
   function calculateDamageModifier(total: number): string {
     if (total <= 12) return '-2';
@@ -43,103 +51,220 @@ export default function CharacterSheet({
   }
 
   return (
-    <div className="character-sheet bg-slate-900 p-8 rounded-lg border border-slate-800 print:bg-white print:text-black print:border-black">
-      {/* Header */}
-      <div className="mb-8 print:border-b-2 print:border-black print:pb-4">
-        <h1 className="text-3xl font-bold text-white mb-2 print:text-black print:text-center">
-          {character.name || 'Unnamed Character'}
+    <div className="character-sheet bg-slate-900 p-8 rounded-lg border border-slate-800 print:bg-white print:text-black print:p-0 print:border-none print:rounded-none">
+
+      {/* Character Sheet Header */}
+      <div className="text-center mb-8 print:mb-4">
+        <h1 className="text-4xl font-bold text-white print:text-black print:text-2xl print:mb-2">
+          SagaBorn D100 Character Sheet
         </h1>
-        <div className="flex flex-wrap gap-4 text-slate-400 print:text-black print:justify-center">
-          <span>{character.species}</span>
-          {character.biology && <span>• {character.biology}</span>}
-          {character.culture && <span>• {character.culture}</span>}
-          {character.profession && <span>• {character.profession}</span>}
-          {character.archetype && <span>• {character.archetype}</span>}
+      </div>
+
+      {/* Basic Information */}
+      <div className="bg-slate-800 p-6 rounded-lg border border-slate-600 mb-6 print:bg-white print:border-2 print:border-black print:p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="mb-4">
+              <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Character Name:</label>
+              <div className="text-xl font-bold text-white print:text-black print-field border-b border-slate-600 pb-1">
+                {characterData.name || 'Unnamed Character'}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Species:</label>
+                <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                  {characterData.species || '—'}
+                </div>
+              </div>
+              {characterData.biology && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Biology:</label>
+                  <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                    {characterData.biology}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {characterData.culture && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Culture:</label>
+                  <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                    {characterData.culture}
+                  </div>
+                </div>
+              )}
+              {characterData.profession && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Profession:</label>
+                  <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                    {characterData.profession}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {characterData.archetype && (
+              <div className="mt-4">
+                <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Archetype:</label>
+                <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                  {characterData.archetype}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div>
+            {(characterData.height || characterData.weight || characterData.lifespan) && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  {characterData.height && (
+                    <div>
+                      <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Height:</label>
+                      <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                        {characterData.height}
+                      </div>
+                    </div>
+                  )}
+                  {characterData.weight && (
+                    <div>
+                      <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Weight:</label>
+                      <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                        {characterData.weight}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {characterData.lifespan && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Avg. Lifespan:</label>
+                    <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                      {characterData.lifespan} years
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+            
+            {(characterData.startingFunds || characterData.starting_funds) && (
+              <div className="mt-4">
+                <label className="block text-sm font-bold text-slate-300 print:text-black mb-1">Starting Funds:</label>
+                <div className="text-white print:text-black print-field border-b border-slate-600 pb-1">
+                  {characterData.startingFunds || characterData.starting_funds}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      {/* Characteristics and Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Characteristics */}
-        <div className="bg-slate-800 p-4 rounded-lg print:border print:border-black print:bg-white">
-          <h3 className="text-lg font-semibold text-white mb-3 print:text-black">Characteristics</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(character.characteristics).map(([key, value]) => (
-              <div key={key} className="flex justify-between">
-                <span className="text-slate-400 print:text-black">{key}:</span>
-                <span className="text-white font-semibold print:text-black">{value}</span>
+        <div className="bg-slate-800 p-6 rounded-lg border border-slate-600 print:bg-white print:border-2 print:border-black print:p-4">
+          <h3 className="text-xl font-bold text-white mb-4 print:text-black print:border-b print:border-black print:pb-2">Characteristics</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {Object.entries(characteristics).map(([key, value]) => (
+              <div key={key} className="flex items-center justify-between">
+                <label className="text-slate-300 print:text-black font-medium">{key}:</label>
+                <div className="w-12 h-8 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center">
+                  <span className="text-white print:text-black font-bold">{(value as number) || 0}</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Derived Stats */}
-        <div className="bg-slate-800 p-4 rounded-lg print:border print:border-black print:bg-white">
-          <h3 className="text-lg font-semibold text-white mb-3 print:text-black">Derived Stats</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-slate-400 print:text-black">Hit Points:</span>
-              <span className="text-white font-semibold print:text-black">{character.derivedStats.hitPoints}</span>
+        {/* Combat Stats */}
+        <div className="bg-slate-800 p-6 rounded-lg border border-slate-600 print:bg-white print:border-2 print:border-black print:p-4">
+          <h3 className="text-xl font-bold text-white mb-4 print:text-black print:border-b print:border-black print:pb-2">Combat & Health</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-slate-300 print:text-black font-medium">Hit Points:</label>
+              <div className="w-16 h-8 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center">
+                <span className="text-white print:text-black font-bold">{derivedStats.hitPoints || 0}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400 print:text-black">Spirit Points:</span>
-              <span className="text-white font-semibold print:text-black">{character.derivedStats.spiritPoints}</span>
+            <div className="flex items-center justify-between">
+              <label className="text-slate-300 print:text-black font-medium">Spirit Points:</label>
+              <div className="w-16 h-8 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center">
+                <span className="text-white print:text-black font-bold">{derivedStats.spiritPoints || 0}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400 print:text-black">Damage Modifier:</span>
-              <span className="text-white font-semibold print:text-black">{damageModifier}</span>
+            <div className="flex items-center justify-between">
+              <label className="text-slate-300 print:text-black font-medium">Damage Modifier:</label>
+              <div className="w-16 h-8 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center">
+                <span className="text-white print:text-black font-bold text-sm">{damageModifier}</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400 print:text-black">Experience Bonus:</span>
-              <span className="text-white font-semibold print:text-black">+{character.derivedStats.experienceBonus}%</span>
+            <div className="flex items-center justify-between">
+              <label className="text-slate-300 print:text-black font-medium">Experience Bonus:</label>
+              <div className="w-16 h-8 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center">
+                <span className="text-white print:text-black font-bold text-sm">+{derivedStats.experienceBonus || 0}%</span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Resource Pools */}
-        <div className="bg-slate-800 p-4 rounded-lg print:border print:border-black print:bg-white">
-          <h3 className="text-lg font-semibold text-white mb-3 print:text-black">Resource Pools</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="text-slate-400 text-sm print:text-black">Effort</span>
-              <div className="text-white font-semibold print:text-black">{character.derivedStats.effort}</div>
+      {/* Resource Pools */}
+      <div className="bg-slate-800 p-6 rounded-lg border border-slate-600 mb-6 print:bg-white print:border-2 print:border-black print:p-4">
+        <h3 className="text-xl font-bold text-white mb-4 print:text-black print:border-b print:border-black print:pb-2">Resource Pools</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="text-center">
+            <label className="block text-slate-300 print:text-black font-medium mb-2">Effort</label>
+            <div className="w-16 h-10 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center mx-auto">
+              <span className="text-white print:text-black font-bold">{derivedStats.effort || 0}</span>
             </div>
-            <div>
-              <span className="text-slate-400 text-sm print:text-black">Stamina</span>
-              <div className="text-white font-semibold print:text-black">{character.derivedStats.stamina}</div>
+          </div>
+          <div className="text-center">
+            <label className="block text-slate-300 print:text-black font-medium mb-2">Stamina</label>
+            <div className="w-16 h-10 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center mx-auto">
+              <span className="text-white print:text-black font-bold">{derivedStats.stamina || 0}</span>
             </div>
-            <div>
-              <span className="text-slate-400 text-sm print:text-black">Intellect</span>
-              <div className="text-white font-semibold print:text-black">{character.derivedStats.intellect}</div>
+          </div>
+          <div className="text-center">
+            <label className="block text-slate-300 print:text-black font-medium mb-2">Intellect</label>
+            <div className="w-16 h-10 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center mx-auto">
+              <span className="text-white print:text-black font-bold">{derivedStats.intellect || 0}</span>
             </div>
-            <div>
-              <span className="text-slate-400 text-sm print:text-black">Spirit</span>
-              <div className="text-white font-semibold print:text-black">{character.derivedStats.spirit}</div>
+          </div>
+          <div className="text-center">
+            <label className="block text-slate-300 print:text-black font-medium mb-2">Spirit</label>
+            <div className="w-16 h-10 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center mx-auto">
+              <span className="text-white print:text-black font-bold">{derivedStats.spirit || 0}</span>
             </div>
-            <div>
-              <span className="text-slate-400 text-sm print:text-black">Agility</span>
-              <div className="text-white font-semibold print:text-black">{character.derivedStats.agility}</div>
+          </div>
+          <div className="text-center">
+            <label className="block text-slate-300 print:text-black font-medium mb-2">Agility</label>
+            <div className="w-16 h-10 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center mx-auto">
+              <span className="text-white print:text-black font-bold">{derivedStats.agility || 0}</span>
             </div>
-            <div>
-              <span className="text-slate-400 text-sm print:text-black">Charm</span>
-              <div className="text-white font-semibold print:text-black">{character.derivedStats.charm}</div>
+          </div>
+          <div className="text-center">
+            <label className="block text-slate-300 print:text-black font-medium mb-2">Charm</label>
+            <div className="w-16 h-10 bg-slate-700 print:bg-white print:border print:border-black rounded flex items-center justify-center mx-auto">
+              <span className="text-white print:text-black font-bold">{derivedStats.charm || 0}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Skills */}
-      {Object.keys(character.skills).length > 0 && (
-        <div className="bg-slate-800 p-4 rounded-lg mb-8 print:border print:border-black print:bg-white">
-          <h3 className="text-lg font-semibold text-white mb-3 print:text-black">Skills</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {Object.entries(character.skills)
-              .filter(([_, value]) => value > 0)
+      {Object.keys(skills).length > 0 && (
+        <div className="bg-slate-800 p-6 rounded-lg border border-slate-600 mb-6 print:bg-white print:border-2 print:border-black print:p-4">
+          <h3 className="text-xl font-bold text-white mb-4 print:text-black print:border-b print:border-black print:pb-2">Skills</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {Object.entries(skills)
+              .filter(([_, value]) => (value as number) > 0)
               .sort(([a], [b]) => a.localeCompare(b))
               .map(([skill, value]) => (
-                <div key={skill} className="flex justify-between">
-                  <span className="text-slate-400 text-sm print:text-black">{skill}:</span>
-                  <span className="text-green-400 font-semibold print:text-black">{value}%</span>
+                <div key={skill} className="flex items-center justify-between bg-slate-700 print:bg-white print:border print:border-gray-400 rounded p-2">
+                  <span className="text-slate-200 print:text-black text-sm font-medium">{skill}:</span>
+                  <span className="text-green-400 print:text-black font-bold">{value as number}%</span>
                 </div>
               ))}
           </div>
@@ -147,120 +272,93 @@ export default function CharacterSheet({
       )}
 
       {/* Special Abilities & Equipment */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {character.specialAbilities.length > 0 && (
-          <div className="bg-slate-800 p-4 rounded-lg print:border print:border-black print:bg-white">
-            <h3 className="text-lg font-semibold text-white mb-3 print:text-black">Special Abilities</h3>
-            <ul className="space-y-1">
-              {character.specialAbilities.map((ability, index) => (
-                <li key={index} className="text-blue-400 print:text-black">• {ability}</li>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {specialAbilities.length > 0 && (
+          <div className="bg-slate-800 p-6 rounded-lg border border-slate-600 print:bg-white print:border-2 print:border-black print:p-4">
+            <h3 className="text-xl font-bold text-white mb-4 print:text-black print:border-b print:border-black print:pb-2">Special Abilities</h3>
+            <div className="space-y-2">
+              {specialAbilities.map((ability: string, index: number) => (
+                <div key={index} className="bg-slate-700 print:bg-white print:border print:border-gray-400 rounded p-3">
+                  <span className="text-blue-300 print:text-black font-medium">{ability}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
-        {character.startingEquipment.length > 0 && (
-          <div className="bg-slate-800 p-4 rounded-lg print:border print:border-black print:bg-white">
-            <h3 className="text-lg font-semibold text-white mb-3 print:text-black">Starting Equipment</h3>
-            <ul className="space-y-1">
-              {character.startingEquipment.map((item, index) => (
-                <li key={index} className="text-green-400 print:text-black">• {item}</li>
+        {startingEquipment.length > 0 && (
+          <div className="bg-slate-800 p-6 rounded-lg border border-slate-600 print:bg-white print:border-2 print:border-black print:p-4">
+            <h3 className="text-xl font-bold text-white mb-4 print:text-black print:border-b print:border-black print:pb-2">Starting Equipment</h3>
+            <div className="space-y-2">
+              {startingEquipment.map((item: string, index: number) => (
+                <div key={index} className="bg-slate-700 print:bg-white print:border print:border-gray-400 rounded p-3">
+                  <span className="text-green-300 print:text-black font-medium">{item}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Character Details */}
-      {(character.height || character.weight || character.lifespan > 0 || character.startingFunds) && (
-        <div className="bg-slate-800 p-4 rounded-lg mb-8 print:border print:border-black print:bg-white">
-          <h3 className="text-lg font-semibold text-white mb-3 print:text-black">Character Details</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {character.height && (
-              <div>
-                <span className="text-slate-400 text-sm print:text-black">Height:</span>
-                <div className="text-white print:text-black">{character.height}</div>
-              </div>
-            )}
-            {character.weight && (
-              <div>
-                <span className="text-slate-400 text-sm print:text-black">Weight:</span>
-                <div className="text-white print:text-black">{character.weight}</div>
-              </div>
-            )}
-            {character.lifespan > 0 && (
-              <div>
-                <span className="text-slate-400 text-sm print:text-black">Avg. Lifespan:</span>
-                <div className="text-white print:text-black">{character.lifespan} years</div>
-              </div>
-            )}
-            {character.startingFunds && (
-              <div>
-                <span className="text-slate-400 text-sm print:text-black">Starting Funds:</span>
-                <div className="text-white print:text-black">{character.startingFunds}</div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Action Buttons */}
       {showActions && (
-        <div className="flex flex-wrap gap-4 justify-center print:hidden">
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-            >
-              <Edit className="w-5 h-5" />
-              Edit Character
-            </button>
-          )}
-          
-          {onLevelUp && (
-            <button
-              onClick={onLevelUp}
-              className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <TrendingUp className="w-5 h-5" />
-              Level Up
-            </button>
-          )}
-          
-          {onPrint && (
-            <button
-              onClick={onPrint}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Printer className="w-5 h-5" />
-              Print Sheet
-            </button>
-          )}
-          
-          {onSave && (
-            <button
-              onClick={onSave}
-              disabled={isSaving}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
-                saveSuccess
-                  ? 'bg-green-700 text-white'
-                  : 'bg-green-600 text-white hover:bg-green-700'
-              } disabled:opacity-50`}
-            >
-              <Save className="w-5 h-5" />
-              {saveSuccess ? 'Saved!' : isSaving ? 'Saving...' : 'Save Character'}
-            </button>
-          )}
-          
-          {onCreateNew && (
-            <button
-              onClick={onCreateNew}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Create New
-            </button>
-          )}
+        <div className="bg-slate-800 p-6 rounded-lg border border-slate-600 print:hidden">
+          <div className="flex flex-wrap gap-4 justify-center">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="flex items-center gap-2 px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+              >
+                <Edit className="w-5 h-5" />
+                Edit Character
+              </button>
+            )}
+            
+            {onLevelUp && (
+              <button
+                onClick={onLevelUp}
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <TrendingUp className="w-5 h-5" />
+                Level Up
+              </button>
+            )}
+            
+            {onPrint && (
+              <button
+                onClick={onPrint}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Printer className="w-5 h-5" />
+                Print Sheet
+              </button>
+            )}
+            
+            {onSave && (
+              <button
+                onClick={onSave}
+                disabled={isSaving}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
+                  saveSuccess
+                    ? 'bg-green-700 text-white'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                } disabled:opacity-50`}
+              >
+                <Save className="w-5 h-5" />
+                {saveSuccess ? 'Saved!' : isSaving ? 'Saving...' : 'Save Character'}
+              </button>
+            )}
+            
+            {onCreateNew && (
+              <button
+                onClick={onCreateNew}
+                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Create New
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -13,19 +13,22 @@ export default function CharacterSheetPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const characterId = searchParams.get('id');
-  const { characters, loading, saveCharacter } = useCharacters();
+  
+  const { characters, loading: charactersLoading, saveCharacter } = useCharacters();
   const [character, setCharacter] = useState<Character | null>(null);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && characterId) {
+    if (!charactersLoading && characterId) {
       const foundCharacter = characters.find(c => c.id === characterId);
       if (foundCharacter) {
         setCharacter(foundCharacter as any);
       }
     }
-  }, [characterId, characters, loading]);
+    setLoading(charactersLoading);
+  }, [characterId, characters, charactersLoading]);
 
   const handleEdit = () => {
     if (character) {
