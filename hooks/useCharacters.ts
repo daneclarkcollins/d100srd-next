@@ -243,7 +243,8 @@ export function useCharacters() {
   }
 
   // Convert SavedCharacter back to Character for use in builder
-  const toCharacter = (savedChar: SavedCharacter): Character => ({
+  // savedChar arrives as a raw Supabase row (snake_case) — TODO(game-data refactor): add a DbCharacterRow type
+  const toCharacter = (savedChar: any): Character => ({
     name: savedChar.name,
     species: savedChar.species,
     biology: savedChar.biology,

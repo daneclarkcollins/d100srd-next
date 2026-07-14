@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Save, RotateCcw, Printer, ChevronLeft, Dice6, Upload, Download, Users, Check, X, Edit, Plus, ArrowLeft, TrendingUp } from 'lucide-react';
 import { Character, SpeciesChoice, createNewCharacter } from '@/lib/character-data';
@@ -113,7 +113,7 @@ function EquipmentStepNormal({ character, setCharacter, isEditing }: {
   );
 }
 
-export default function CharacterBuilderPage() {
+function CharacterBuilderInner() {
   const searchParams = useSearchParams();
   const { user } = useSupabase();
   const { saveCharacter, loading: charactersLoading, fetchCharacters, characters } = useCharacters();
@@ -133,6 +133,7 @@ export default function CharacterBuilderPage() {
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
 
   const isAdvancedMode = characterMode === 'advanced';
+  const isEditing = !!searchParams.get('edit');
 
   // Handle URL parameters for edit mode
   useEffect(() => {
@@ -1414,5 +1415,12 @@ export default function CharacterBuilderPage() {
 
       </div>
     </div>
+  );
+}
+export default function CharacterBuilderPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+      <CharacterBuilderInner />
+    </Suspense>
   );
 }

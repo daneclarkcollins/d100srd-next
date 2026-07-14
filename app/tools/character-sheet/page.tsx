@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -9,7 +9,7 @@ import Modal from '@/components/Modal/Modal';
 import { useCharacters } from '@/hooks/useCharacters';
 import { Character } from '@/lib/character-data';
 
-export default function CharacterSheetPage() {
+function CharacterSheetPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const characterId = searchParams.get('id');
@@ -135,5 +135,12 @@ export default function CharacterSheetPage() {
         </Modal>
       </div>
     </div>
+  );
+}
+export default function CharacterSheetPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+      <CharacterSheetPageInner />
+    </Suspense>
   );
 }

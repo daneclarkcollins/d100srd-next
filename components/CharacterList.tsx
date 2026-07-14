@@ -75,9 +75,9 @@ export default function CharacterList({ onLoadCharacter, onCreateNew, refreshTri
 
   const getCharacterLevel = (char: SavedCharacter) => {
     // Calculate rough "level" based on completion
-    if (char.current_step === 'complete') return 'Complete'
-    if (char.current_step === 'equipment') return 'Nearly Complete'
-    if (char.current_step === 'skills') return 'In Progress'
+    if (char.currentStep === 'complete') return 'Complete'
+    if (char.currentStep === 'equipment') return 'Nearly Complete'
+    if (char.currentStep === 'skills') return 'In Progress'
     return 'Started'
   }
 

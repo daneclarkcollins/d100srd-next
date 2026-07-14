@@ -5,10 +5,10 @@ import matter from 'gray-matter';
 
 export async function GET(
   request: Request,
-  { params }: { params: { type: string; slug: string } }
+  { params }: { params: Promise<{ type: string; slug: string }> }
 ) {
   try {
-    const { type, slug } = params;
+    const { type, slug } = await params;
     
     // Validate type
     const validTypes = ['spells', 'creatures', 'rules', 'tools'];

@@ -32,7 +32,7 @@ export default function CharacterQuickStats() {
     }
   }, [activeCharacter, loading, error])
 
-  if (!shouldShow) {
+  if (!shouldShow || !activeCharacter) {
     return null
   }
 

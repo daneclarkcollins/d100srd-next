@@ -75,7 +75,8 @@ export function CharacterProvider({ children }: CharacterProviderProps) {
   }
 
   // Convert SavedCharacter to ActiveCharacterStats
-  const createActiveCharacterStats = (savedChar: SavedCharacter): ActiveCharacterStats => {
+  // TODO(game-data refactor): replace local formulas with lib/game-data/rules and type the row properly
+  const createActiveCharacterStats = (savedChar: any): ActiveCharacterStats => {
     const damageModifier = calculateDamageModifier(
       savedChar.characteristics.STR,
       savedChar.characteristics.SIZ

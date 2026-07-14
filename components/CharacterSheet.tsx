@@ -112,7 +112,7 @@ export default function CharacterSheet({
           </div>
         </div>
         <div className="flex items-center gap-4 print:hidden">
-          <img src="/sagaborn-logo.png" alt="SagaBorn" className="h-12" onError={(e) => e.target.style.display = 'none'} />
+          <img src="/sagaborn-logo.png" alt="SagaBorn" className="h-12" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
       </div>
 

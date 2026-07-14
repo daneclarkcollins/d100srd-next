@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "validate:data": "tsx scripts/validate-game-data.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.6",
@@ -48,6 +49,7 @@
     "@types/react-dom": "^19",
     "prisma": "^6.15.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "tsx": "^4.19.0"
   }
 }
