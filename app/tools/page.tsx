@@ -8,6 +8,13 @@ export const metadata = {
 export default function ToolsPage() {
   const tools = [
     {
+      title: 'Quick Character Generator',
+      href: '/tools/quick-generator',
+      description: 'Instant NPCs and pickup-game characters. Optionally pick species, profession, or archetype, hit Build, and get a complete character rolled by the book — stats, lifepath, talents, skills, spells, and gear.',
+      status: 'Available',
+      icon: '⚡'
+    },
+    {
       title: 'Character Builder',
       href: '/tools/character-builder',
       description: 'Create and customize your SagaBorn character step by step. Select species, allocate characteristics, choose skills, and calculate all derived statistics automatically.',
