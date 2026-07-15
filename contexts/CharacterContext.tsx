@@ -19,6 +19,8 @@ interface ActiveCharacterStats extends Character {
 
 interface CharacterContextType {
   activeCharacter: ActiveCharacterStats | null
+  /** All of the user's saved characters (for the switcher). */
+  characters: SavedCharacter[]
   loading: boolean
   error: string | null
   loadActiveCharacter: () => Promise<void>
@@ -384,6 +386,7 @@ export function CharacterProvider({ children }: CharacterProviderProps) {
 
   const value: CharacterContextType = {
     activeCharacter,
+    characters,
     loading,
     error,
     loadActiveCharacter,

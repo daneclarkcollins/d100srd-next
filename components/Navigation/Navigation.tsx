@@ -4,14 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthButton from "@/components/auth/AuthButton";
-import { useCharacterContext } from "@/contexts/CharacterContext";
 import { useSupabase } from "@/components/SupabaseProvider";
-import { Dice6, User } from "lucide-react";
+import { Dice6 } from "lucide-react";
+import CharacterSwitcher from "@/components/CharacterSwitcher";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { activeCharacter } = useCharacterContext();
   const { user } = useSupabase();
 
   // Dynamic navigation items based on authentication status
@@ -55,15 +54,8 @@ export default function Navigation() {
               </Link>
             ))}
             
-            {activeCharacter && (
-              <div className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 border-l border-slate-700">
-                <User className="w-4 h-4" />
-                <span className="font-medium text-blue-400">
-                  {activeCharacter.name}
-                </span>
-              </div>
-            )}
-            
+            {user && <CharacterSwitcher />}
+
             <AuthButton />
           </div>
 
@@ -99,12 +91,9 @@ export default function Navigation() {
 
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-slate-800">
-            {activeCharacter && (
-              <div className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 border-b border-slate-700 mb-2">
-                <User className="w-4 h-4" />
-                <span className="font-medium text-blue-400">
-                  {activeCharacter.name}
-                </span>
+            {user && (
+              <div className="border-b border-slate-700 mb-2 pb-2">
+                <CharacterSwitcher mobile />
               </div>
             )}
             
