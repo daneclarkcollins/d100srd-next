@@ -25,7 +25,7 @@ export default function SpellsPage() {
             {spells.map((spell) => (
               <Link
                 key={spell.slug}
-                href={`/spells/${spell.slug}`}
+                href={`/rules/spells/${spell.slug}`}
                 className="block bg-slate-900 p-6 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors"
               >
                 <h2 className="text-2xl font-semibold text-white mb-2">{spell.title}</h2>

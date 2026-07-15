@@ -287,8 +287,8 @@ function CharacterBuilderInner() {
     const spirit = Math.floor((newCharacteristics.INT + newCharacteristics.SOC) / 2);
     const agility = Math.floor((newCharacteristics.DEX + newCharacteristics.ACU) / 2);
     const charm = Math.floor((newCharacteristics.SOC + newCharacteristics.INT) / 2);
-    const hitPoints = Math.floor((newCharacteristics.CON + newCharacteristics.SIZ) / 2);
-    const spiritPoints = newCharacteristics.INT;
+    const hitPoints = newCharacteristics.CON + newCharacteristics.SIZ; // errata: HP = CON+SIZ
+    const spiritPoints = newCharacteristics.ACU; // canon: SP = ACU
     
     const updatedCharacter = {
       ...character,
@@ -368,8 +368,8 @@ function CharacterBuilderInner() {
     const spirit = Math.floor((pointBuyStats.INT + pointBuyStats.SOC) / 2);
     const agility = Math.floor((pointBuyStats.DEX + pointBuyStats.ACU) / 2);
     const charm = Math.floor((pointBuyStats.SOC + pointBuyStats.INT) / 2);
-    const hitPoints = Math.floor((pointBuyStats.CON + pointBuyStats.SIZ) / 2);
-    const spiritPoints = pointBuyStats.INT;
+    const hitPoints = pointBuyStats.CON + pointBuyStats.SIZ; // errata: HP = CON+SIZ
+    const spiritPoints = pointBuyStats.ACU; // canon: SP = ACU
     
     const updatedCharacter = {
       ...character,
@@ -915,8 +915,8 @@ function CharacterBuilderInner() {
                           const spirit = Math.floor((pointBuyStats.INT + pointBuyStats.SOC) / 2);
                           const agility = Math.floor((pointBuyStats.DEX + pointBuyStats.ACU) / 2);
                           const charm = Math.floor((pointBuyStats.SOC + pointBuyStats.INT) / 2);
-                          const hitPoints = Math.floor((pointBuyStats.CON + pointBuyStats.SIZ) / 2);
-                          const spiritPoints = pointBuyStats.INT;
+                          const hitPoints = pointBuyStats.CON + pointBuyStats.SIZ; // errata: HP = CON+SIZ
+                          const spiritPoints = pointBuyStats.ACU; // canon: SP = ACU
                           
                           setCharacter({ 
                             ...character, 

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import remarkGfm from "remark-gfm";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { 
   getContentBySlug, 
@@ -47,7 +48,7 @@ export default async function RulePage({ params }: Props) {
         {content.description && (
           <p className="text-xl text-slate-400 mb-8">{content.description}</p>
         )}
-        <MDXRemote source={content.content} components={components} />
+        <MDXRemote source={content.content} components={components} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
       </div>
     </div>
   );

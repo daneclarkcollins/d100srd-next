@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import remarkGfm from "remark-gfm";
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { getContentBySlug, getAllContentSlugs } from '@/lib/markdown';
 import DiceRoller from '@/components/DiceRoller/DiceRoller';
@@ -55,7 +56,7 @@ export default async function EquipmentPage({ params }: PageProps) {
         </header>
         
         <div className="prose prose-invert prose-slate max-w-none">
-          <MDXRemote source={content.content} components={components} />
+          <MDXRemote source={content.content} components={components} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
         </div>
       </article>
     </div>

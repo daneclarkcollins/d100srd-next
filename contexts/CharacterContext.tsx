@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { damageModifier as rulesDamageModifier, movement as rulesMovement } from '@/lib/game-data/rules'
 import { useSupabase } from '@/components/SupabaseProvider'
 import { useCharacters, SavedCharacter } from '@/hooks/useCharacters'
 import { Character } from '@/lib/character-data'
@@ -44,35 +45,15 @@ export function CharacterProvider({ children }: CharacterProviderProps) {
   const [error, setError] = useState<string | null>(null)
 
   // Calculate damage modifier based on STR + SIZ
-  const calculateDamageModifier = (str: number, siz: number): string => {
-    const combined = str + siz
-    if (combined <= 12) return '-1d4'
-    if (combined <= 16) return '-1d6'
-    if (combined <= 24) return '0'
-    if (combined <= 32) return '+1d4'
-    if (combined <= 40) return '+1d6'
-    if (combined <= 56) return '+2d6'
-    if (combined <= 72) return '+3d6'
-    if (combined <= 88) return '+4d6'
-    return '+5d6'
-  }
+  // Canonical formulas from the game-data rules module (errata-backed)
+  const calculateDamageModifier = (str: number, siz: number): string =>
+    rulesDamageModifier({ STR: str, SIZ: siz, CON: 0, INT: 0, ACU: 0, DEX: 0, SOC: 0 })
 
-  // Calculate experience bonus based on INT + ACU
-  const calculateExperienceBonus = (int: number, acu: number): number => {
-    const combined = int + acu
-    if (combined >= 33) return 4
-    if (combined >= 29) return 3
-    if (combined >= 25) return 2
-    if (combined >= 21) return 1
-    return 0
-  }
+  // Experience bonus = half INT, rounded up (canon)
+  const calculateExperienceBonus = (int: number, _acu: number): number => Math.ceil(int / 2)
 
-  // Calculate movement speed based on DEX + STR
-  const calculateMovementSpeed = (dex: number, str: number, siz: number): number => {
-    if (dex >= siz && str >= siz) return 8
-    if (dex > siz || str > siz) return 6
-    return 4
-  }
+  // MOV is derived from SIZ (errata ruling 4)
+  const calculateMovementSpeed = (_dex: number, _str: number, siz: number): number => rulesMovement(siz)
 
   // Convert SavedCharacter to ActiveCharacterStats
   // TODO(game-data refactor): replace local formulas with lib/game-data/rules and type the row properly

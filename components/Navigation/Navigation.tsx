@@ -18,6 +18,7 @@ export default function Navigation() {
   const navItems = [
     { name: "Home", href: user ? "/dashboard" : "/" },
     { name: "SRD", href: "/rules" },
+    { name: "Bestiary", href: "/creatures" },
     { name: "Character Builder", href: "/tools/character-builder" },
     { name: "Dice Roller", href: "/tools/dice-roller", icon: Dice6 },
     { name: "Tools", href: "/tools" },

@@ -1,6 +1,7 @@
 "use client";
 
 import { Character } from '@/lib/character-data';
+import { damageModifier as rulesDamageModifier } from '@/lib/game-data/rules';
 import { Printer, Save, Edit, Plus, TrendingUp } from 'lucide-react';
 
 interface CharacterSheetProps {
@@ -37,16 +38,8 @@ export default function CharacterSheet({
   const damageModifier = calculateDamageModifier((characteristics.STR || 0) + (characteristics.SIZ || 0));
 
   function calculateDamageModifier(total: number): string {
-    if (total <= 12) return '-2';
-    if (total <= 16) return '-1';
-    if (total <= 24) return 'None';
-    if (total <= 32) return '+1d4';
-    if (total <= 40) return '+1d6';
-    if (total <= 56) return '+2d6';
-    if (total <= 72) return '+3d6';
-    if (total <= 88) return '+4d6';
-    if (total <= 104) return '+5d6';
-    return '+6d6';
+    const dm = rulesDamageModifier({ STR: total, SIZ: 0, CON: 0, INT: 0, ACU: 0, DEX: 0, SOC: 0 });
+    return dm === '0' ? 'None' : dm;
   }
 
   // Skill categories as shown in the traditional sheet
