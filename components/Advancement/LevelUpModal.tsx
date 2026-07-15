@@ -49,6 +49,13 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
   const [tab, setTab] = useState<Tab>('experience');
   const [xpResults, setXpResults] = useState<ExperienceRollResult[] | null>(null);
   const [talentFilter, setTalentFilter] = useState('');
+  // Training / research state (all hooks must precede the early return below)
+  const [trainSkill, setTrainSkill] = useState('');
+  const [trainQuality, setTrainQuality] = useState<RollQuality>('success');
+  const [trainMode, setTrainMode] = useState<'training' | 'research'>('training');
+  const [trainResult, setTrainResult] = useState<string | null>(null);
+  const [charToTrain, setCharToTrain] = useState<keyof Characteristics>('STR');
+  const [newItem, setNewItem] = useState({ name: '', type: 'attack' as LegacyItem['type'], description: '' });
 
   const c = character.characteristics as Characteristics;
   const xpBonus = xpBonusOf(c);
@@ -110,11 +117,6 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
     save({ ...advancement, mana: { current: base, max: base }, log: log(`Mana pool started at ${base} (ACU/2)`) });
   };
 
-  // Training / research state
-  const [trainSkill, setTrainSkill] = useState('');
-  const [trainQuality, setTrainQuality] = useState<RollQuality>('success');
-  const [trainMode, setTrainMode] = useState<'training' | 'research'>('training');
-  const [trainResult, setTrainResult] = useState<string | null>(null);
 
   const applyTraining = async () => {
     if (!trainSkill) return;
@@ -133,7 +135,6 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
     save({ ...advancement, log: log(`${verb}: ${trainSkill} ${current}%→${next}%`) });
   };
 
-  const [charToTrain, setCharToTrain] = useState<keyof Characteristics>('STR');
   const trainChar = async () => {
     const value = c[charToTrain];
     const updated: Characteristics = { ...c, [charToTrain]: value + 1 };
@@ -155,7 +156,6 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
   };
 
   // Legacy items
-  const [newItem, setNewItem] = useState({ name: '', type: 'attack' as LegacyItem['type'], description: '' });
   const slots = legacySlotsAtTpl(tpl);
   const addLegacyItem = () => {
     if (!newItem.name.trim()) return;

@@ -104,7 +104,7 @@ export default function CharacterSheet({
           </div>
         </div>
         <div className="flex items-center gap-4 print:hidden">
-          <img src="/sagaborn-logo.png" alt="SagaBorn" className="h-12" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <span className="text-2xl font-bold text-gray-800">SagaBorn <span className="text-blue-700">D100</span></span>
         </div>
       </div>
 
