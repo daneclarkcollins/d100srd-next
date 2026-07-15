@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import CharacterSheet from '@/components/CharacterSheet';
-import Modal from '@/components/Modal/Modal';
+import LevelUpModal from '@/components/Advancement/LevelUpModal';
 import { useCharacters } from '@/hooks/useCharacters';
 import { Character } from '@/lib/character-data';
 
@@ -40,7 +40,7 @@ function CharacterSheetPageInner() {
   const handleSave = async () => {
     if (character) {
       try {
-        await saveCharacter(character);
+        await saveCharacter(character, characterId ?? undefined);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       } catch (error) {
@@ -59,6 +59,15 @@ function CharacterSheetPageInner() {
 
   const handleLevelUp = () => {
     setShowLevelUpModal(true);
+  };
+
+  const handleAdvancementChange = async (updated: Character) => {
+    setCharacter(updated);
+    try {
+      await saveCharacter(updated, characterId ?? undefined);
+    } catch (error) {
+      console.error('Failed to save advancement changes:', error);
+    }
   };
 
   if (loading) {
@@ -111,28 +120,15 @@ function CharacterSheetPageInner() {
         />
 
         {/* Level Up Modal */}
-        <Modal
-          isOpen={showLevelUpModal}
-          onClose={() => setShowLevelUpModal(false)}
-          title="Level Up - Coming Soon!"
-          size="sm"
-        >
-          <div className="text-center py-4">
-            <div className="text-6xl mb-4">🎲</div>
-            <p className="text-white text-lg mb-2">
-              The Level Up feature is coming soon!
-            </p>
-            <p className="text-slate-400">
-              You'll be able to advance your character, gain new skills, and increase your abilities.
-            </p>
-            <button
-              onClick={() => setShowLevelUpModal(false)}
-              className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Got it!
-            </button>
-          </div>
-        </Modal>
+        {characterId && (
+          <LevelUpModal
+            isOpen={showLevelUpModal}
+            onClose={() => setShowLevelUpModal(false)}
+            character={character}
+            characterId={characterId}
+            onCharacterChange={handleAdvancementChange}
+          />
+        )}
       </div>
     </div>
   );

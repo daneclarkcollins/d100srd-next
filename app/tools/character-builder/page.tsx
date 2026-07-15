@@ -1348,16 +1348,16 @@ function CharacterBuilderInner() {
         <Modal
           isOpen={showLevelUpModal}
           onClose={() => setShowLevelUpModal(false)}
-          title="Level Up - Coming Soon!"
+          title="Level Up"
           size="sm"
         >
           <div className="text-center py-4">
             <div className="text-6xl mb-4">🎲</div>
             <p className="text-white text-lg mb-2">
-              The Level Up feature is coming soon!
+              Level up from the character sheet
             </p>
             <p className="text-slate-400">
-              You'll be able to advance your character, gain new skills, and increase your abilities.
+              Open your saved character&apos;s sheet and hit Level Up — experience rolls, talents, training, and Legacy Items live there.
             </p>
             <button
               onClick={() => setShowLevelUpModal(false)}
