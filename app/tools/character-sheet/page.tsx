@@ -16,7 +16,7 @@ function CharacterSheetPageInner() {
   
   const { characters, loading: charactersLoading, saveCharacter } = useCharacters();
   const [character, setCharacter] = useState<Character | null>(null);
-  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const [showLevelUpModal, setShowLevelUpModal] = useState(searchParams.get('levelup') === '1');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 

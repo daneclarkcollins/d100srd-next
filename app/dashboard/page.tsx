@@ -7,7 +7,6 @@ import { useSupabase } from '@/components/SupabaseProvider'
 import { useCharacters } from '@/hooks/useCharacters'
 import { Play, CheckCircle, Download, Trash2, Edit, TrendingUp } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
-import Modal from '@/components/Modal/Modal'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -16,7 +15,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
   const [deletingCharacter, setDeletingCharacter] = useState<string | null>(null)
-  const [showLevelUpModal, setShowLevelUpModal] = useState(false)
 
   useEffect(() => {
     if (!user && !loading) {
@@ -190,7 +188,11 @@ export default function DashboardPage() {
                     </div>
 
                     <button
-                      onClick={() => setShowLevelUpModal(true)}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        router.push(`/tools/character-sheet?id=${character.id}&levelup=1`)
+                      }}
                       className="flex items-center justify-center gap-1 px-3 py-2 mb-8 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors cursor-pointer"
                       title="Level Up Character"
                     >
@@ -273,29 +275,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Level Up Modal */}
-      <Modal
-        isOpen={showLevelUpModal}
-        onClose={() => setShowLevelUpModal(false)}
-        title="Level Up - Coming Soon!"
-        size="sm"
-      >
-        <div className="text-center py-4">
-          <div className="text-6xl mb-4">🎲</div>
-          <p className="text-white text-lg mb-2">
-            The Level Up feature is coming soon!
-          </p>
-          <p className="text-slate-400">
-            You'll be able to advance your character, gain new skills, and increase your abilities.
-          </p>
-          <button
-            onClick={() => setShowLevelUpModal(false)}
-            className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Got it!
-          </button>
-        </div>
-      </Modal>
+
     </div>
   )
 }
