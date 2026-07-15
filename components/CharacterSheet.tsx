@@ -2,6 +2,7 @@
 
 import { Character } from '@/lib/character-data';
 import { damageModifier as rulesDamageModifier } from '@/lib/game-data/rules';
+import { skillCategories as gameSkillCategories } from '@/lib/character-data';
 import { Printer, Save, Edit, Plus, TrendingUp } from 'lucide-react';
 
 interface CharacterSheetProps {
@@ -42,15 +43,13 @@ export default function CharacterSheet({
     return dm === '0' ? 'None' : dm;
   }
 
-  // Skill categories as shown in the traditional sheet
-  const skillCategories = {
-    Communication: ['Bargain', 'Command', 'Disguise', 'Etiquette', 'Fast Talk', 'Perform', 'Persuade', 'Teach'],
-    Dexterous: ['Acrobatics', 'Art', 'Craft', 'Fine Manipulation', 'Hide', 'Repair', 'Sleight of Hand', 'Stealth'],
-    Mental: ['Appraise', 'First Aid', 'Gaming', 'Knowledge', 'Medicine', 'Strategy', 'Spellcraft', 'Survival'],
-    Perception: ['Insight', 'Listen', 'Navigate', 'Research', 'Sense', 'Spot', 'Track'],
-    Physical: ['Athletics', 'Climb', 'Jump', 'Pilot (Land)', 'Pilot (Sea)', 'Pilot (Air)', 'Ride', 'Swim', 'Throw'],
-    Combat: ['Brawl', 'Bludgeon Weapons', 'Dodge', 'Grapple', 'Martial Arts', 'Piercing Weapons', 'Ranged Weapons', 'Shield', 'Siege Weapons', 'Slashing Weapons']
-  };
+  // Skill categories derive from the canonical skill list (title-cased keys for the sheet)
+  const skillCategories = Object.fromEntries(
+    Object.entries(gameSkillCategories).map(([key, data]) => [
+      key.charAt(0).toUpperCase() + key.slice(1),
+      data.skills,
+    ])
+  ) as Record<string, string[]>;
 
   return (
     <div className="character-sheet bg-white print:bg-white text-black print:text-black p-8 print:p-4 max-w-none print:max-w-none">

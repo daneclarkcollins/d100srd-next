@@ -86,9 +86,11 @@ hooks/useCharacters.ts         # Supabase character CRUD (snake_case rows ↔ ca
 - [x] SRD re-imported from canonical docs (2026-07-15), spells + bestiary complete
 - [x] Game-data layer + validator + quick generator
 - [x] Production build green; legacy formula bugs fixed (HP, SP, MOV, XP bonus, damage mod)
-- [ ] Migrate the character builder's internal species/skill/profession data onto `lib/game-data` (single source of truth; it still carries its own copies)
-- [ ] Character sheet polish: live HP/SP tracking on saved characters, PDF export, shareable links (Phase 3)
-- [ ] Encounter/NPC tooling on top of the bestiary + Creature Compendium tiers
-- [ ] Equipment data: shields, ammunition, mounts, vehicles, siege weapons (deferred in equipment.ts)
-- [ ] Admin content editing (or accept the Drive→re-import pipeline as the workflow)
-- [ ] Retire `content/tools/` WordPress exports once real tools cover them
+- [x] Character builder migrated onto `lib/game-data` (lib/character-data.ts is a pure adapter)
+- [x] Encounter Builder on Compendium CV tiers (109 structured creature stat blocks in lib/game-data/creatures.ts)
+- [x] Equipment data complete: shields, ammunition, mounts, vehicles, siege weapons
+- [x] content/tools WordPress exports retired (superseded by real tools)
+- [x] Live HP/SP tracking (CharacterQuickStats) + print/PDF export on the character sheet
+- [ ] Shareable character links — needs a Supabase schema addition (share token + RLS policy); requires dashboard access
+- [ ] End-to-end auth flow verification against live Supabase (needs a real signup)
+- [ ] Admin content editing (or accept the Drive→re-import pipeline as the workflow — recommend the latter)

@@ -68,6 +68,7 @@ export interface GeneratedSkill {
 
 export interface GeneratedCharacter {
   seed: number;
+  name: string;
   species: string;
   profession: string;
   archetype: Archetype;
@@ -413,8 +414,11 @@ export function generateCharacter(opts: GeneratorOptions = {}): GeneratedCharact
   const languages = ['Common', ...shuffle(LANGUAGES.filter((l) => l !== 'Common'), rng).slice(0, Math.max(0, langCount - 1))]
     .map((l) => `${l} (${STARTING_LANGUAGE_RATING}%)`);
 
+  const name = species.commonNames?.length ? pick(species.commonNames, rng) : 'Unnamed';
+
   return {
     seed,
+    name,
     species: species.name,
     profession: profession.name,
     archetype,

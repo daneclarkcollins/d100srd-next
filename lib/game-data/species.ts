@@ -16,6 +16,7 @@ import type { Species } from './types';
 export const SPECIES: Species[] = [
   {
     name: 'Teran',
+    commonNames: ['Martyn', 'Rikard', 'Sundaiya', 'Margery', 'Hurst', 'Wez'],
     sizRoll: '2d6+6',
     traits: [
       'Thrives in almost all environments; no special abilities or genetics beyond that.',
@@ -28,6 +29,7 @@ export const SPECIES: Species[] = [
   },
   {
     name: 'Dworv',
+    commonNames: ['Dorgen', 'Remli', 'Dara', 'Hogren', 'Stemp'],
     sizRoll: '2d6+4',
     traits: ["Dark Vision 60'"],
     adulthoodAge: 25,
@@ -39,6 +41,7 @@ export const SPECIES: Species[] = [
   },
   {
     name: 'Dweran',
+    commonNames: ['Grogrem', 'Val', 'Semmy'],
     sizRoll: '2d6+6',
     traits: ["Dark Vision 30'"],
     adulthoodAge: 18,
@@ -49,6 +52,7 @@ export const SPECIES: Species[] = [
   },
   {
     name: 'Elfling',
+    commonNames: ['Teela', 'Hass', 'Willow', 'Pherilyn', 'Espa', 'Elia', 'Xyla'],
     sizRoll: '1d3+3',
     traits: [
       'Harmed by Cold Iron; steel causes discomfort (soreness, itching, skin irritation) but no damage.',
@@ -63,6 +67,7 @@ export const SPECIES: Species[] = [
   },
   {
     name: 'Feral Elfling',
+    commonNames: ['Asher', 'Vex', 'Nyna', 'Astar', 'Belax'],
     sizRoll: '1d3+3', // errata #5: same SIZ as Elflings
     traits: [
       'Harmed by Cold Iron; wearing or using iron deals 1d4 damage per hour; steel causes discomfort but no real damage.',
@@ -77,6 +82,7 @@ export const SPECIES: Species[] = [
   },
   {
     name: 'Faun',
+    commonNames: ['Di', 'Cera', 'Ella', 'Jaas', 'Ora'],
     sizRoll: '2d6+6',
     traits: [
       'Harmed by Cold Iron; steel causes discomfort but no real damage.',
@@ -91,6 +97,7 @@ export const SPECIES: Species[] = [
   },
   {
     name: 'Orog',
+    commonNames: ['Ooda', 'Tul', 'Guo', 'Ot', 'Dod', 'Gue'],
     sizRoll: '1d3+19',
     traits: [
       'Slower in cold weather (below 40 degrees F): movement is halved.',
@@ -105,6 +112,7 @@ export const SPECIES: Species[] = [
   },
   {
     name: 'Elf',
+    commonNames: ['Azera', 'Ranariel', 'Entroth', 'Navarth', 'Solana', 'Vindalass', 'Orfindel', 'Gilandras'],
     sizRoll: '2d6+6',
     traits: [
       'Harmed by Cold Iron; wearing or using iron deals 1d4 damage per hour; steel causes discomfort but no real damage.',

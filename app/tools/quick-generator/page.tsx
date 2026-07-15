@@ -149,7 +149,7 @@ function QuickGeneratorInner() {
             <div className="bg-slate-800/60 px-6 py-4 border-b border-slate-800 flex flex-wrap items-baseline justify-between gap-2">
               <div>
                 <h2 className="text-2xl font-bold text-white">
-                  {c.species} {c.profession}
+                  {c.name} <span className="text-slate-400 font-semibold">— {c.species} {c.profession}</span>
                 </h2>
                 <p className="text-slate-400 text-sm">
                   {c.archetype} • {c.age} • {c.derived.sizeCategory} • Seed {c.seed}

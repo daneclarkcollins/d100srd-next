@@ -115,6 +115,8 @@ export interface Talent {
 
 export interface Species {
   name: string;
+  /** Common names from doc 002 — used by the quick generator. */
+  commonNames?: string[];
   /** SIZ roll at creation (errata #5: Feral Elfling = Elfling = 1d3+3). */
   sizRoll: DiceExpr;
   /** Biology traits, semi-structured. */

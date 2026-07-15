@@ -163,6 +163,22 @@ for (const a of ARMOR) {
 }
 
 // ---------------------------------------------------------------------------
+section('Creatures');
+{
+  const { CREATURES } = require('../lib/game-data/creatures');
+  const seen = new Set<string>();
+  for (const c of CREATURES) {
+    const key = `${c.slug}::${c.name}`;
+    if (seen.has(key)) err(`duplicate creature block: ${key}`);
+    seen.add(key);
+    if (c.cv !== null && (c.cv < 0 || c.cv > 30)) warn(`creature ${c.name}: suspicious CV ${c.cv}`);
+    if (c.cv !== null && c.hp === null) warn(`creature ${c.name}: has CV but no HP`);
+  }
+  const noCv = CREATURES.filter((c: any) => c.cv === null).map((c: any) => c.name);
+  if (noCv.length) console.log(`  (${noCv.length} block(s) without CV: ${noCv.join(', ')})`);
+}
+
+// ---------------------------------------------------------------------------
 // Cross-check: profession equipment strings that name specific catalog items
 section('Profession equipment references');
 const catalog = new Set(
