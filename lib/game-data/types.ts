@@ -144,6 +144,8 @@ export type SkillGrant =
 
 export interface Profession {
   name: string;
+  /** One-line flavor description from doc 002. */
+  description?: string;
   /** d100 range on the Profession Lifepath table; null = choose-only (none currently). */
   d100: [number, number] | null;
   rarity: 'Very Common' | 'Common' | 'Uncommon' | 'Rare' | 'Very Rare';

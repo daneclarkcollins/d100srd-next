@@ -26,6 +26,7 @@ import { Profession } from './types';
 export const PROFESSIONS: Profession[] = [
   {
     name: 'Crafter',
+    description: 'Whether a village blacksmith, a glassblower, or a maker of finely tuned watches, you make trade goods by hand and sell them to interested buyers. You usually work in a shop, whether you own it or are merely employed…',
     d100: [1, 4],
     rarity: 'Very Common',
     archetype: 'Expert',
@@ -48,6 +49,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Farmer',
+    description: 'As a farmer, you dwell in a rural or barely tamed area, coaxing a living out of the land through growing crops or tending animal herds. It is a hard life with long days of backbreaking labor, but nonetheless satisfying.',
     d100: [5, 8],
     rarity: 'Very Common',
     archetype: 'Expert',
@@ -70,6 +72,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Herder',
+    description: 'You make your living tending herd animals, riding the open range and taking care of the herds, finding strays, and bringing them to market when it is time to sell.',
     d100: [9, 12],
     rarity: 'Very Common',
     archetype: 'Expert', // table also suggests Warrior
@@ -92,6 +95,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Hunter',
+    description: 'Whether for survival or for the thrill of the hunt, you specialize in tracking and either trapping or killing wild animals or other beings.',
     d100: [13, 23],
     rarity: 'Very Common',
     archetype: 'Expert',
@@ -118,6 +122,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Laborer',
+    description: 'You are a worker, whether in a shop, in a warehouse, or simply heavy labor. Your muscle and ability to do repetitive tasks are more important than any brainpower you can muster.',
     d100: [24, 36],
     rarity: 'Very Common',
     archetype: 'Expert', // table also suggests Warrior
@@ -140,6 +145,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Servant',
+    description: 'You are employed as a helper or servant, tending to the household affairs and domestic needs of an affluent employer. You might be a gentleman’s manservant, the adjutant of a general, or you could be a scullery maid…',
     d100: [37, 42],
     rarity: 'Very Common',
     archetype: 'Expert',
@@ -162,6 +168,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Soldier',
+    description: 'Whether through enlistment or conscription, you are a professional soldier, charged with the defense of your country or organization. You might be a mercenary or sellsword, or you might actually believe in the cause…',
     d100: [43, 48],
     rarity: 'Very Common',
     archetype: 'Warrior',
@@ -184,6 +191,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Warrior',
+    description: 'You specialize in individual combat, surviving by your reflexes and your weapon skills. Perhaps you adhere to a code of honor like chivalry or bushido, or you are a mercenary or barbaric adventurer. Soldiers fight in…',
     d100: [49, 55],
     rarity: 'Very Common',
     archetype: 'Warrior',
@@ -206,6 +214,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Beggar',
+    description: 'You survive by begging for money, food, and other necessities. You may call yourself a hobo, homeless, or a wandering vagabond. Perhaps you had a run of bad luck, are of a discriminated-against group, have a criminal…',
     d100: [56, 57],
     rarity: 'Common',
     archetype: 'Expert',
@@ -228,6 +237,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Criminal',
+    description: 'You make your way through the world by breaking the law, whether by strong-arm theft, organized crime, picking pockets, or some other means of gaining valuables or money illegally.',
     d100: [58, 61],
     rarity: 'Common',
     archetype: 'Expert',
@@ -250,6 +260,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Detective',
+    description: 'You use skills of observation, deduction, and criminology to investigate occurrences.',
     d100: [62, 62],
     rarity: 'Common',
     archetype: 'Expert',
@@ -272,6 +283,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Entertainer',
+    description: 'You use your performing talent to entertain audiences of all sizes, whether through improvisation or scripted performances.',
     d100: [63, 65],
     rarity: 'Common',
     archetype: 'Expert',
@@ -294,6 +306,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Explorer',
+    description: 'You have made it your life’s work to seek out the unknown corners of the world, go where none have gone before, and bring back knowledge of what you have found, either for glory or in the name of discovery.',
     d100: [66, 69],
     rarity: 'Common',
     archetype: 'Expert', // table also suggests Warrior
@@ -316,6 +329,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Gambler',
+    description: 'You survive by the whim of chance, or by cheating fate in games of luck and skill. Inevitably, you travel around; drifting from one gambling arena to another, sometimes one step ahead of the law, hoping your luck…',
     d100: [70, 72],
     rarity: 'Common',
     archetype: 'Expert',
@@ -338,6 +352,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Lawkeeper / Guard',
+    description: 'You have the authority and the jurisdiction to uphold and defend the law, ideally in defense of the common folk. Your enforcement of the law and legal code is supported by the power structure in your community.',
     d100: [73, 74],
     rarity: 'Common',
     archetype: 'Warrior',
@@ -360,6 +375,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Merchant',
+    description: 'You make a living in trade, purchasing resources for less and selling for more. You might work in or own a shop, or you might be mobile: a traveling vendor, a wandering tinker, an adventuresome spice merchant, or an…',
     d100: [75, 75],
     rarity: 'Common',
     archetype: 'Expert',
@@ -382,6 +398,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Politician',
+    description: 'You have been elected or appointed to a position of authority and make your living taking part in or directing government activities, whether city-wide or greater. You could be a medieval magistrate or a town mayor.',
     d100: [76, 76],
     rarity: 'Common',
     archetype: 'Expert',
@@ -404,6 +421,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Priest',
+    description: 'Your faith and belief in the divine have led you to the calling of the priesthood, and you spend your time preaching or in activities befitting the worship of your deity (or deities). You could be an acetic monk or a…',
     d100: [77, 77],
     rarity: 'Common',
     archetype: 'Expert', // table also suggests Mage
@@ -426,6 +444,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Sailor',
+    description: 'You ply the ocean waves, working hard to maintain your vessel’s integrity, whether as a pirate, a naval officer, or an ancient world trader.',
     d100: [78, 78],
     rarity: 'Common',
     archetype: 'Expert',
@@ -448,6 +467,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Scholar',
+    description: 'Study and learning define your life, and you specialize in one or more fields of knowledge, eagerly seeking out all there is to know within your intellectual domain. You might teach this knowledge to students or…',
     d100: [79, 79],
     rarity: 'Common',
     archetype: 'Expert', // table also suggests Mage
@@ -470,6 +490,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Thief',
+    description: 'You take what you want, either to survive or because it appeals to you. You could be a lowly pickpocket, an infamous brigand, or a glamorous international jewel thief. You flaunt the law to steal, either armed,…',
     d100: [80, 80],
     rarity: 'Common',
     archetype: 'Expert',
@@ -492,6 +513,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Artist',
+    description: 'You make your living through making art, whether drawing, painting, sculpture, or any other means of creative expression in various mediums.',
     d100: [81, 83],
     rarity: 'Rare',
     archetype: 'Expert',
@@ -514,6 +536,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Athlete',
+    description: 'An athlete, your background comes from organized sports, often sponsored by royalty or wealthy merchants.',
     d100: [84, 86],
     rarity: 'Rare',
     archetype: 'Warrior',
@@ -536,6 +559,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Spy',
+    description: 'You are skilled in subterfuge and infiltration, entering countries or organizations under cover or in secret, finding out their secrets, and reporting them back to an enemy or interested party.',
     d100: [87, 90],
     rarity: 'Rare',
     archetype: 'Expert', // table also suggests Warrior
@@ -558,6 +582,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Assassin',
+    description: 'As a coldblooded professional assassin, death is your trade. Whether you kill for money or some other cause, you are skilled in the termination of other living beings, usually in secrecy.',
     d100: [91, 92],
     rarity: 'Very Rare',
     archetype: 'Expert', // table also suggests Warrior
@@ -580,6 +605,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Mage',
+    description: 'You were training in one of the many ways of magic in the world. This does not grant you the ability to cast spells, only understand their base mechanics, their history, and their lore.',
     d100: [93, 94],
     rarity: 'Very Rare',
     archetype: 'Mage',
@@ -602,6 +628,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Monster Hunter',
+    description: 'Since the Return, the lands have been plagued with creatures who want nothing more than to harm those in Atheles. You are determined to stop them.',
     d100: [95, 95],
     rarity: 'Very Rare',
     archetype: 'Expert',
@@ -624,6 +651,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Mystic',
+    description: 'You focus on the spiritual side of the world, often finding yourself in deep study or research. While you enjoy all knowledge you focus on the mystical. You can be a spiritual leader of a tribe, or a researcher in a…',
     d100: [96, 96], // errata #9 (confirmed 7-14): Mystic added to profession chart: 96, Very Rare, Mage
     rarity: 'Very Rare',
     archetype: 'Mage',
@@ -646,6 +674,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Noble',
+    description: 'You were born into wealth and a ruling class. In a society that recognizes such social distinctions, your status is often associated with ranks and titles, but even if such titles are meaningless, you are still…',
     d100: [97, 97],
     rarity: 'Very Rare',
     archetype: 'Expert', // table also suggests Warrior
@@ -668,6 +697,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Occultist',
+    description: 'You are a student of obscure secrets, hidden lore, and magical power, believing in the influence and primacy of supernatural forces.',
     d100: [98, 98],
     rarity: 'Very Rare',
     archetype: 'Mage',
@@ -690,6 +720,7 @@ export const PROFESSIONS: Profession[] = [
   },
   {
     name: 'Witch Hunter',
+    description: 'You are training in hunting mages, whether you find heretics who offended the church or a necromancer who defiles the graves.',
     d100: [99, 100],
     rarity: 'Very Rare',
     archetype: 'Mage', // table also suggests Warrior

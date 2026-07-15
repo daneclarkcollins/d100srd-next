@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Character, skillCategories, skillBaseChances, professionSkills } from '@/lib/character-data';
+import { Character, skillCategories, skillBaseChances, professionSkills, getSkillBase } from '@/lib/character-data';
 
 interface SkillSelectionProps {
   character: Character;
@@ -52,7 +52,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
   }
 
   function calculateTotal(skill: string): number {
-    const base = skillBaseChances[skill] || 0;
+    const base = getSkillBase(skill, character.characteristics);
     const categoryBonus = getCategoryBonus(getSkillCategory(skill));
     const professionalAlloc = allocation.professional[skill] || 0;
     const personalAlloc = allocation.personal[skill] || 0;
@@ -61,7 +61,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
       // In advanced mode, check for 90%/95% caps
       const hasSkillAbove90 = Object.keys({ ...skillBaseChances }).some(otherSkill => {
         if (otherSkill === skill) return false;
-        const otherBase = skillBaseChances[otherSkill] || 0;
+        const otherBase = getSkillBase(otherSkill, character.characteristics);
         const otherCategoryBonus = getCategoryBonus(getSkillCategory(otherSkill));
         const otherProfessionalAlloc = allocation.professional[otherSkill] || 0;
         const otherPersonalAlloc = allocation.personal[otherSkill] || 0;
@@ -76,7 +76,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
   }
 
   function getEffectiveAllocation(skill: string, mode: 'professional' | 'personal'): number {
-    const base = skillBaseChances[skill] || 0;
+    const base = getSkillBase(skill, character.characteristics);
     const categoryBonus = getCategoryBonus(getSkillCategory(skill));
     const professionalAlloc = allocation.professional[skill] || 0;
     const personalAlloc = allocation.personal[skill] || 0;
@@ -137,7 +137,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
     const otherModeAlloc = currentMode === 'professional' 
       ? (allocation.personal[skill] || 0)
       : (allocation.professional[skill] || 0);
-    const base = skillBaseChances[skill] || 0;
+    const base = getSkillBase(skill, character.characteristics);
     const categoryBonus = getCategoryBonus(getSkillCategory(skill));
     const newTotal = base + categoryBonus + newValue + otherModeAlloc;
     
@@ -166,7 +166,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
         return otherTotal >= 91;
       });
       const skillCap = hasSkillAbove90 ? 90 : 95;
-      const base = skillBaseChances[skill] || 0;
+      const base = getSkillBase(skill, character.characteristics);
       const categoryBonus = getCategoryBonus(getSkillCategory(skill));
       const maxPossible = skillCap - base - categoryBonus;
       
@@ -178,7 +178,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
       setAllocation(updatedAllocation);
     } else {
       // In normal mode, max to 75% or as many points as available
-      const base = skillBaseChances[skill] || 0;
+      const base = getSkillBase(skill, character.characteristics);
       const categoryBonus = getCategoryBonus(getSkillCategory(skill));
       const currentTotal = calculateTotal(skill);
       const maxPossible = 75 - base - categoryBonus;
@@ -212,7 +212,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
     // In advanced mode, we track points with 90%/95% percentage caps (not allocation caps)
     const currentAllocation = { ...allocation };
     const currentValue = (currentAllocation.professional[skill] || 0) + (currentAllocation.personal[skill] || 0);
-    const base = skillBaseChances[skill] || 0;
+    const base = getSkillBase(skill, character.characteristics);
     const categoryBonus = getCategoryBonus(getSkillCategory(skill));
     const currentTotal = calculateTotal(skill);
     
@@ -365,7 +365,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
                 {adjustableSkills.map(skill => {
                   const isProfessionSkill = characterProfessionSkills.includes(skill);
                   const isDisabled = mode === 'professional' && !isProfessionSkill;
-                  const base = skillBaseChances[skill] || 0;
+                  const base = getSkillBase(skill, character.characteristics);
                   const categoryBonus = getCategoryBonus(category);
                   const professionalAlloc = getEffectiveAllocation(skill, 'professional');
                   const personalAlloc = getEffectiveAllocation(skill, 'personal');

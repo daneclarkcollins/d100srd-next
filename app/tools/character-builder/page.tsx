@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Save, RotateCcw, Printer, ChevronLeft, Dice6, Upload, Download, Users, Check, X, Edit, Plus, ArrowLeft, TrendingUp } from 'lucide-react';
 import { Character, SpeciesChoice, createNewCharacter } from '@/lib/character-data';
+import { professionFunds } from '@/lib/character-data';
+import { rollDice as rollDiceExpr } from '@/lib/game-data/dice';
 import SpeciesSelection from '@/components/CharacterBuilder/SpeciesSelection';
 import SkillSelection from '@/components/CharacterBuilder/SkillSelection';
 import CharacterList from '@/components/CharacterList';
@@ -23,12 +25,12 @@ function EquipmentStepNormal({ character, setCharacter, isEditing }: {
   // Auto-roll on mount if no funds set yet and not editing
   useEffect(() => {
     if (!isEditing && character.startingFundsAmount === 0) {
-      const roll = Math.floor(Math.random() * 4) + 1; // 1d4
-      const amount = roll * 10 + 10;
+      const dice = professionFunds(character.profession);
+      const amount = rollDiceExpr(dice);
       setCharacter({
         ...character,
         startingFundsAmount: amount,
-        startingFunds: `${amount} gp (rolled ${roll} × 10 + 10)`
+        startingFunds: `${amount} gp (rolled ${dice})`
       });
       setFundsInput(amount);
     } else if (isEditing) {
@@ -37,12 +39,12 @@ function EquipmentStepNormal({ character, setCharacter, isEditing }: {
   }, []); // Only run once on mount
 
   const handleReroll = () => {
-    const roll = Math.floor(Math.random() * 4) + 1; // 1d4
-    const amount = roll * 10 + 10;
+    const dice = professionFunds(character.profession);
+    const amount = rollDiceExpr(dice);
     setCharacter({
       ...character,
       startingFundsAmount: amount,
-      startingFunds: `${amount} gp (rolled ${roll} × 10 + 10)`
+      startingFunds: `${amount} gp (rolled ${dice})`
     });
     setFundsInput(amount);
   };
