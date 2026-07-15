@@ -8,7 +8,7 @@
  * Costs are in gp (1 gp = 10 sp = 100 cp; sp/cp prices converted to fractions).
  */
 
-import type { Weapon, Armor, GearItem } from './types';
+import type { Weapon, Armor, GearItem, Shield } from './types';
 
 // ---------------------------------------------------------------------------
 // A) Weapons — melee (Light/Medium/Large) and ranged weapon tables
@@ -1037,6 +1037,341 @@ export const GEAR: GearItem[] = [
   },
 ];
 
-// Deferred: mounts/pets, vehicles/ships, siege weapons, ammunition, shields,
-// poisons, and inn goods/services are NOT encoded here (out of scope for this
-// pass; see 005 doc for their tables).
+// ---------------------------------------------------------------------------
+// D) Shields
+// ---------------------------------------------------------------------------
+
+export const SHIELDS: Shield[] = [
+  {
+    name: 'Buckler',
+    parryBase: 15,
+    av: 1,
+    hp: 15,
+    damage: '1d2/Knockback',
+    str: 5,
+    dex: 7,
+    costGp: 1,
+    weightLb: 2,
+    special:
+      'Worn on belt or strapped to the arm, leaving both hands free: may still use two-handed ranged weapons, two-handed swords, and dual weapons.',
+  },
+  {
+    name: 'Shield, light wooden',
+    parryBase: 15,
+    av: 2,
+    hp: 18,
+    damage: '1d2/Knockback',
+    str: 8,
+    dex: 8,
+    costGp: 3,
+    weightLb: 5,
+    special: 'Wood does not rust (but can catch fire).',
+  },
+  {
+    name: 'Shield, light steel',
+    parryBase: 15,
+    av: 2,
+    hp: 20,
+    damage: '1d2/Knockback',
+    str: 9,
+    dex: 9,
+    costGp: 12,
+    weightLb: 6,
+    special: 'Steel cannot catch fire (but can rust).',
+  },
+  {
+    name: 'Shield, heavy wooden',
+    parryBase: 30,
+    av: 3,
+    hp: 20,
+    damage: '1d2/Knockback',
+    str: 10,
+    dex: 8,
+    costGp: 7,
+    weightLb: 10,
+    special: 'Wood does not rust (but can catch fire).',
+  },
+  {
+    name: 'Shield, heavy steel',
+    parryBase: 30,
+    av: 3,
+    hp: 22,
+    damage: '1d2/Knockback',
+    str: 11,
+    dex: 9,
+    costGp: 25,
+    weightLb: 15,
+    special: 'Steel cannot catch fire (but can rust).',
+  },
+  {
+    name: 'Shield, spiked',
+    parryBase: 15,
+    av: 3,
+    hp: 20,
+    damage: '1d6+dm, Impaling', // only shield whose damage adds the damage modifier
+    str: 9,
+    dex: 9,
+    costGp: 30,
+    weightLb: 15,
+  },
+  {
+    name: 'Shield, tower',
+    parryBase: 45,
+    av: 3,
+    hp: 26,
+    damage: 'Knockback', // Dmg/Special column prints "Knockback, Can be set*" — no damage dice
+    skillMod: "-5% to Dexterous, -5' to Speed",
+    str: 12,
+    dex: 8,
+    costGp: 50,
+    weightLb: 45,
+    special:
+      'Can be set in the ground (move or standard action) to provide directional Cover; withdrawn as a free action.',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// E) Ammunition — doc footnote: quantity in parentheses is the standard
+//    production lot for the listed base cost. Type column (P/B) and Special
+//    column encoded in `note`.
+// ---------------------------------------------------------------------------
+
+export const AMMUNITION: GearItem[] = [
+  { name: 'Arrows or bolts (20)', costGp: 1, weightLb: 2, note: 'Type: P.' },
+  { name: 'Bullets, sling (10)', costGp: 0.1, weightLb: 3, note: 'Type: B.' }, // 1 sp
+  { name: 'Silver arrow or bolt (10)', costGp: 5, weightLb: 3, note: 'Type: P.' },
+  {
+    name: 'Cold iron arrows or bolts (10)',
+    costGp: 2,
+    weightLb: 5,
+    note: 'Type: P. +1d4 damage to creatures with cold iron weakness.',
+  },
+  {
+    name: 'Barbed arrows or bolts (10)',
+    costGp: 5,
+    weightLb: 6,
+    note: 'Type: P. Requires a successful Effort or First Aid check to remove; failure inflicts 1d4 damage and still removes the arrow.',
+  },
+  {
+    name: 'Aradan steel arrows or bolts (10)',
+    costGp: 10,
+    weightLb: 1,
+    note: 'Type: P. +1d4 damage to creatures with Aradan steel weakness.',
+  },
+  {
+    name: 'Amarnium arrows or bolts (10)',
+    costGp: 20,
+    weightLb: 0.5,
+    note: 'Type: P. Lightweight.',
+  },
+  {
+    name: 'Tritium arrows or bolts (10)',
+    costGp: 60,
+    weightLb: 2,
+    note: 'Type: P. Can crit against tritium-armored targets.',
+  },
+  {
+    // data note: this row and the rest below are priced per single arrow/bolt
+    // (no quantity printed), unlike the lot-priced rows above.
+    name: 'Alchemist fire arrow or bolt',
+    costGp: 10,
+    weightLb: 0.5,
+    note: 'Type: P. +1d6 and sets fire to flammable items.',
+  },
+  {
+    name: 'Acid (weak) arrow or bolt',
+    costGp: 6,
+    weightLb: 0.5,
+    note: 'Type: P. +1d4 acid (1 round).', // table prints "1 rounds"
+  },
+  {
+    name: 'Acid (standard) arrow or bolt',
+    costGp: 15,
+    weightLb: 0.5,
+    note: 'Type: P. +1d6+1 acid (3 rounds).',
+  },
+  {
+    name: 'Acid (strong) arrow or bolt',
+    costGp: 20,
+    weightLb: 0.5,
+    note: 'Type: P. +1d10+1 acid (10 rounds).',
+  },
+  {
+    name: 'Blackrock arrow or bolt',
+    costGp: 10,
+    weightLb: 0.5,
+    note: "Type: P. +1d8 explosion 5' (unstable — see Black Rock).",
+  },
+  {
+    name: 'Healing salve arrow or bolt',
+    costGp: 30,
+    weightLb: 0.5,
+    note: 'Type: P. Heals target 1d4+2.',
+  },
+  {
+    name: 'Oil arrow or bolt',
+    costGp: 1,
+    weightLb: 0.5,
+    note: "Type: P. Covers object and 10'x10' area in flammable oil; also makes it difficult terrain.",
+  },
+  {
+    name: 'Snare arrow or bolt',
+    costGp: 10,
+    weightLb: 0.5,
+    note: 'Type: P. Slows target by 1/2.',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// F) Mounts, Pets, and Tack — doc "Mounts, Pets, and Vehicles" table.
+//    Columns: Name, Speed, HP, Combat, Can Enter Dungeons*, Cost (no weight
+//    column, so weightLb is omitted). Speed/HP/Combat/dungeon note encoded
+//    in `note`. Saddle and animal barding are printed at the top of the doc's
+//    *Vehicles* table but are tack, so they are included here.
+// ---------------------------------------------------------------------------
+
+export const MOUNTS: GearItem[] = [
+  {
+    name: 'Ank',
+    costGp: 300,
+    note: 'Speed 30 ft; HP 37; Bite 60% melee (1d8+4); can enter dungeons.',
+  },
+  {
+    name: 'Dog, guard',
+    costGp: 25,
+    note: 'Speed 40 ft; HP 6; attack 55% (1d4+1); can enter dungeons.',
+  },
+  {
+    name: 'Donkey',
+    costGp: 8,
+    note: 'Speed 30 ft; HP 11; attack 40% (1d2); can enter dungeons.',
+  },
+  {
+    name: 'Horse, heavy',
+    costGp: 200,
+    note: 'Speed 50 ft; HP 19; (2) attacks 50% (1d8); will not enter dungeons.',
+  },
+  {
+    name: 'Horse, light',
+    costGp: 75,
+    note: 'Speed 60 ft; HP 15; (2) attacks 50% (1d6); will not enter dungeons.',
+  },
+  {
+    name: 'Orillot',
+    costGp: 1000,
+    note: 'Speed 30 ft; HP 85; Gore 80% (2d6+10) or slam 75% (2d8+10); will not enter dungeons.',
+  },
+  {
+    name: 'Pony',
+    costGp: 30,
+    note: 'Speed 40 ft; HP 13; attack 45% (1d4); will not enter dungeons.',
+  },
+  {
+    name: 'Sarap',
+    costGp: 600,
+    note: 'Speed 60 ft; HP 38; 2 talons 60% (2d6+9) and bite 60% (1d8+9); will not enter dungeons.',
+  },
+  {
+    name: 'Thundrom',
+    costGp: 350,
+    note: 'Speed 50 ft; HP 19; Bite 65% (1d6+5) and slam 65% (1d8+2); will not enter dungeons.',
+  },
+  {
+    name: 'Warhorse, heavy',
+    costGp: 400,
+    note: 'Speed 40 ft; HP 30; (2) hooves 65% (1d8+4); will not enter dungeons.',
+  },
+  {
+    name: 'Warhorse, light',
+    costGp: 150,
+    note: 'Speed 50 ft; HP 24; (2) hooves 65% (1d6+3); will not enter dungeons.',
+  },
+  // --- Tack & harness (printed under the doc's "Vehicles" table) ---
+  { name: 'Saddle', costGp: 15 },
+  {
+    name: 'Animal armor/barding',
+    costGp: null, // formula price, not a flat amount
+    note: 'Costs the same as character armor x2; unusual creatures x4.',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// G) Vehicles — doc "Vehicles" table (land vehicles + "Ships" subsection).
+//    The table prints name and cost only: no weight, speed, or capacity
+//    columns, so those fields are omitted.
+// ---------------------------------------------------------------------------
+
+export const VEHICLES: GearItem[] = [
+  // --- Land ---
+  { name: 'Cart', costGp: 15 },
+  { name: 'Wagon, covered', costGp: 25 },
+  { name: 'Wagon, elaborate', costGp: 35 },
+  { name: 'Wagon, caravan', costGp: 400 },
+  { name: 'Wagon, giant caravan', costGp: 1000 },
+  // --- Ships ---
+  { name: 'Rowboat', costGp: 50 },
+  { name: 'Cog', costGp: 3000 },
+  { name: 'Longship', costGp: 10000 },
+  { name: 'Galleon', costGp: 30000 },
+  { name: 'Warship', costGp: 65000 },
+];
+
+// ---------------------------------------------------------------------------
+// H) Siege Weapons — doc table columns: Weapon, Range, Damage, Space/Tonnage,
+//    HP, Can be turret mounted, Rate of Fire per full round, Quick Reload DC,
+//    # Personnel Min/Max, Price. All siege weapons bypass AV (doc footnote).
+//    Encoded as GearItem (the crewed-artillery stat line does not fit the
+//    personal Weapon interface); full stat line in `note`.
+// ---------------------------------------------------------------------------
+
+export const SIEGE_WEAPONS: GearItem[] = [
+  {
+    name: 'Light ballista',
+    costGp: 400,
+    note: "Range 240'; damage 2d6 (bypasses AV); space/tonnage 10x5 / 1/4; HP 15; rate of fire 1/2; quick reload DC 13; personnel 1/2.",
+  },
+  {
+    name: 'Medium ballista',
+    costGp: 600,
+    note: "Range 160'; damage 3d6 (bypasses AV); space/tonnage 10x10 / 2; HP 20; rate of fire 1/3; quick reload DC 27; personnel 2/3.",
+  },
+  {
+    // data note: suspect — the heavy ballista's printed range (80') is shorter
+    // than the light (240') and medium (160'); encoded as printed.
+    name: 'Heavy ballista',
+    costGp: 800,
+    note: "Range 80'; damage 4d6 (bypasses AV); space/tonnage 15x15 / 3; HP 35; can be turret mounted; rate of fire 1/4; quick reload DC 57; personnel 4/5.",
+  },
+  {
+    name: 'Light catapult',
+    costGp: 500,
+    note: "Range 100'-200'; damage 3d6 (bypasses AV); space/tonnage 10x5 / 1; HP 20; rate of fire 1/5; quick reload DC 13; personnel 1/2.",
+  },
+  {
+    name: 'Medium catapult',
+    costGp: 700,
+    note: "Range 100'-200'; damage 4d6 (bypasses AV); space/tonnage 10x10 / 2; HP 30; rate of fire 1/6; quick reload DC 32; personnel 3/4.",
+  },
+  {
+    name: 'Heavy catapult',
+    costGp: 1000,
+    note: "Range 100'-200'; damage 5d6 (bypasses AV); space/tonnage 15x15 / 3; HP 40; can be turret mounted; rate of fire 1/8; quick reload DC 72; personnel 5/5.",
+  },
+  {
+    // data note: the two Turret rows print their size ("Small"/"Med") in the
+    // Range column; damage, HP, RoF, reload, and personnel cells are blank.
+    name: 'Turret, small',
+    costGp: 1000,
+    note: 'Size Small (printed in Range column); space/tonnage 15x15 / 1; all other combat cells blank in the table.',
+  },
+  {
+    name: 'Turret, medium',
+    costGp: 2000,
+    note: 'Size Med (printed in Range column); space/tonnage 20x20 / 1; all other combat cells blank in the table.',
+  },
+];
+
+// Deferred: poisons and inn goods/services are NOT encoded here (out of scope
+// for this pass; see 005 doc for their tables). Shields, ammunition,
+// mounts/pets/tack, vehicles/ships, and siege weapons are now encoded above
+// (sections D-H).

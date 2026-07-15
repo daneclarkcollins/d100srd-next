@@ -15,6 +15,13 @@ export default function ToolsPage() {
       icon: '⚡'
     },
     {
+      title: 'Encounter Builder',
+      href: '/tools/encounter-builder',
+      description: 'Balance fights the Creature Compendium way. Set your party\'s Talent Point Levels, add creatures from the bestiary with Minion/Champion/Boss tiers, and see the difficulty verdict live.',
+      status: 'Available',
+      icon: '⚔️'
+    },
+    {
       title: 'Character Builder',
       href: '/tools/character-builder',
       description: 'Create and customize your SagaBorn character step by step. Select species, allocate characteristics, choose skills, and calculate all derived statistics automatically.',
@@ -25,7 +32,7 @@ export default function ToolsPage() {
       title: 'Dice Roller',
       href: '/tools/dice-roller',
       description: 'A comprehensive dice rolling tool supporting all standard dice types with modifiers. Perfect for quick skill checks and damage rolls.',
-      status: 'Coming Soon',
+      status: 'Available',
       icon: '🎲'
     },
     {

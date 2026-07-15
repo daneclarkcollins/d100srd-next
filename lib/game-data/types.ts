@@ -234,6 +234,28 @@ export interface Armor {
   fitsSiz?: number; // negative semantics pending Mike (round-2 list)
 }
 
+/**
+ * Shield table columns (doc 005 "Shields"): Base%, AV, HP, Dmg/Special,
+ * Skill Mod., Cost, Weight, STR/DEX.
+ */
+export interface Shield {
+  name: string;
+  /** Base% column — base chance for the Shield/Parry skill with this shield. */
+  parryBase: number;
+  av: number;
+  hp: number | null;
+  /** Dmg/Special column as printed, e.g. "1d2/Knockback" (spiked adds +dm). */
+  damage?: string;
+  /** Skill Mod. column (blank for most shields). */
+  skillMod?: string;
+  /** STR/DEX minimums from the STR/DEX column. */
+  str?: number;
+  dex?: number;
+  costGp: number | null;
+  weightLb?: number | null;
+  special?: string;
+}
+
 export interface GearItem {
   name: string;
   costGp: number | null;
