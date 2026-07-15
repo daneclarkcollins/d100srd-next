@@ -5,7 +5,7 @@ A web application for the SagaBorn D100 tabletop RPG (a d100/BRP-derived system 
 
 **Repository**: https://github.com/daneclarkcollins/d100srd-next.git
 **Tech stack**: Next.js 15 (App Router), TypeScript, Tailwind CSS 4, MDX (next-mdx-remote + remark-gfm), Supabase (Postgres + Auth)
-**Deployment**: Vercel, automatic from `main`. No feature branches — commit to main, keep the build green (`npm run build` before pushing).
+**Deployment**: Vercel, automatic from `main` — LIVE at https://d100srd-next.vercel.app (project created 2026-07-16; d100srd.com DNS not yet pointed). No feature branches — commit to main, keep the build green (`npm run build` before pushing). Vercel hard-blocks deploys of Next.js/React/next-mdx-remote versions with known CVEs — keep them patched; note the Redeploy button rebuilds the SAME commit, fixes must arrive as fresh pushes.
 **Legacy**: the old WordPress site's Docker config lives in the separate `d100srd-dev` repo — obsolete, kept for reference only.
 
 ## Canonical Rules Pipeline (the important part)
