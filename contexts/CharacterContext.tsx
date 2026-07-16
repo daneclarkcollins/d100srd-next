@@ -113,7 +113,9 @@ export function CharacterProvider({ children }: CharacterProviderProps) {
     }
   }
 
-  // Load the active character from database
+  // Force a fresh fetch; the [user, characters] effect below derives the
+  // active character from whatever comes back (reading `characters` here
+  // directly was a stale-closure bug — it saw the pre-fetch list).
   const loadActiveCharacter = async () => {
     if (!user) {
       setActiveCharacter(null)
@@ -124,16 +126,7 @@ export function CharacterProvider({ children }: CharacterProviderProps) {
     setError(null)
 
     try {
-      await fetchCharacters()
-      
-      // Find the active character
-      const activeChar = characters.find(char => char.is_active)
-      
-      if (activeChar) {
-        setActiveCharacter(createActiveCharacterStats(activeChar))
-      } else {
-        setActiveCharacter(null)
-      }
+      await fetchCharacters(true)
     } catch (err) {
       // Don't show error if it's just missing tables - this is expected for new installations
       const errorMessage = err instanceof Error ? err.message : 'Failed to load active character'
@@ -333,13 +326,28 @@ export function CharacterProvider({ children }: CharacterProviderProps) {
     setError(null)
   }
 
-  // Load active character when user changes or characters list updates
+  // Derive the active character whenever the (shared, event-synced)
+  // characters list changes. Keeps current HP/SP when it's the same
+  // character being refreshed so a background refetch doesn't reset them.
   useEffect(() => {
-    if (user && characters.length > 0) {
-      loadActiveCharacter()
-    } else if (!user) {
+    if (!user) {
       clearActiveCharacter()
+      return
     }
+    const activeChar = characters.find(char => char.is_active)
+    setActiveCharacter(prev => {
+      if (!activeChar) return prev && characters.length > 0 ? null : prev
+      const next = createActiveCharacterStats(activeChar)
+      if (prev && prev.id === next.id) {
+        return {
+          ...next,
+          currentHP: Math.min(prev.currentHP, next.maxHP),
+          currentSP: Math.min(prev.currentSP, next.maxSP),
+        }
+      }
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, characters])
 
   // Load current HP/SP from character_status table when active character changes

@@ -5,6 +5,17 @@ import { useSupabase } from '@/components/SupabaseProvider'
 import { Character } from '@/lib/character-data'
 import { v4 as uuidv4 } from 'uuid'
 
+/**
+ * Several components each create their own useCharacters() instance (nav
+ * switcher, dashboard, sheet, builder). This event keeps them in sync: any
+ * instance that mutates characters dispatches it, and every instance
+ * force-refetches on hearing it.
+ */
+const CHARACTERS_CHANGED_EVENT = 'sagaborn:characters-changed'
+const notifyCharactersChanged = () => {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(CHARACTERS_CHANGED_EVENT))
+}
+
 export interface SavedCharacter extends Character {
   id: string
   user_id: string
@@ -117,7 +128,13 @@ export function useCharacters() {
     setError(null)
 
     try {
-      const characterData = {
+      // NOTE: is_active is deliberately NOT written here — an upsert leaves
+      // omitted columns untouched on conflict, so saving a sheet or applying
+      // a level-up no longer deactivates the active character. Likewise
+      // current_step is only written when the caller actually knows it, so a
+      // finished character can't be regressed to step 1 by a save from a
+      // partially-hydrated object.
+      const characterData: Record<string, unknown> = {
         id: characterId || uuidv4(),
         user_id: user.id,
         name: character.name,
@@ -139,9 +156,12 @@ export function useCharacters() {
         starting_equipment: character.startingEquipment,
         starting_funds: character.startingFunds,
         starting_funds_amount: character.startingFundsAmount,
-        current_step: convertCurrentStepToNumber(character.currentStep),
-        is_active: false,
         updated_at: new Date().toISOString()
+      }
+      if (character.currentStep) {
+        characterData.current_step = convertCurrentStepToNumber(character.currentStep)
+      } else if (!characterId) {
+        characterData.current_step = 1 // brand-new row needs a value
       }
 
       const { data, error } = await supabase
@@ -155,8 +175,14 @@ export function useCharacters() {
         throw new Error(`Database error: ${error.message || 'Unknown error'}`);
       }
 
-      // Update local state
-      await fetchCharacters()
+      // Update local state from the row the DB actually returned (a forced
+      // refetch here used to race the 30s cache and revert fresh edits).
+      setCharacters(prev => {
+        const exists = prev.some(c => c.id === data.id)
+        return exists ? prev.map(c => (c.id === data.id ? data : c)) : [data, ...prev]
+      })
+      setLastFetched(Date.now())
+      notifyCharactersChanged()
 
       return data
     } catch (err) {
@@ -189,6 +215,7 @@ export function useCharacters() {
 
       // Update local state
       setCharacters(prev => prev.filter(char => char.id !== characterId))
+      notifyCharactersChanged()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete character')
       console.error('Error deleting character:', err)
@@ -222,12 +249,13 @@ export function useCharacters() {
       if (error) throw error
 
       // Update local state
-      setCharacters(prev => 
+      setCharacters(prev =>
         prev.map(char => ({
           ...char,
           is_active: char.id === characterId
         }))
       )
+      notifyCharactersChanged()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set active character')
       console.error('Error setting active character:', err)
@@ -275,6 +303,14 @@ export function useCharacters() {
       setCharacters([])
     }
   }, [user])
+
+  // Stay in sync when a different useCharacters() instance mutates data
+  useEffect(() => {
+    if (!user) return
+    const onChanged = () => fetchCharacters(true)
+    window.addEventListener(CHARACTERS_CHANGED_EVENT, onChanged)
+    return () => window.removeEventListener(CHARACTERS_CHANGED_EVENT, onChanged)
+  }, [user, fetchCharacters])
 
   return {
     characters,

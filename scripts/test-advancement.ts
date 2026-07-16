@@ -51,6 +51,16 @@ check(at90.newRating === 90, 'skill at 90 cannot gain without a Talent');
 const at89 = runExperienceRolls(['X'], { X: 89 }, 50, makeRng(1))[0];
 check(at89.success ? at89.newRating === 90 : at89.newRating === 89, '89 + 2 caps to 90');
 
+// Advanced Skills talent: the picked skill caps at 95 instead of 90
+const adv90 = runExperienceRolls(['X'], { X: 90 }, 50, makeRng(1), 'X')[0];
+check(adv90.success ? adv90.newRating === 92 : adv90.newRating === 90, 'Advanced Skills pick can pass 90');
+const adv94 = runExperienceRolls(['X'], { X: 94 }, 50, makeRng(1), 'X')[0];
+check(adv94.success ? adv94.newRating === 95 : adv94.newRating === 94, 'Advanced Skills pick caps at 95');
+const adv95 = runExperienceRolls(['X'], { X: 95 }, 99, makeRng(1), 'X')[0];
+check(adv95.newRating === 95, 'Advanced Skills pick cannot pass 95');
+const notPick = runExperienceRolls(['Y'], { Y: 90 }, 99, makeRng(1), 'X')[0];
+check(notPick.newRating === 90, 'non-picked skills still cap at 90');
+
 // determinism
 const r1 = runExperienceRolls(['A', 'B'], { A: 10, B: 20 }, 5, makeRng(7));
 const r2 = runExperienceRolls(['A', 'B'], { A: 10, B: 20 }, 5, makeRng(7));
@@ -73,7 +83,11 @@ for (let i = 0; i < 200; i++) {
   const gf = trainingGain('fumble', tr);
   check(gf <= -1 && gf >= -3, 'training fumble loss in -1d3');
   const rg = researchGain('failure', tr);
-  check(rg === -1, 'research failure is -1');
+  check(rg >= 0 && rg <= 3, 'research failure is 1d4-1 (canon: -1 modifier to the d4)');
+  const rf = researchGain('fumble', tr);
+  check(rf >= -1 && rf <= 2, 'research fumble is 1d4-2');
+  const rs = researchGain('success', tr);
+  check(rs >= 1 && rs <= 4, 'research success is 1d4');
 }
 check(applyTrainingCap(74, 6) === TRAINING_SKILL_CAP, 'training capped at 75');
 check(applyTrainingCap(80, 5) === 80, 'training never raises a skill already above 75');

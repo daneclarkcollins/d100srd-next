@@ -115,13 +115,15 @@ export default function CharacterSwitcher({ mobile = false }: { mobile?: boolean
             )}
           </div>
           <div className="border-t border-slate-700 flex">
-            <Link
-              href="/tools/character-sheet"
-              onClick={() => setOpen(false)}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-700/40"
-            >
-              <FileText className="w-3.5 h-3.5" /> View Sheet
-            </Link>
+            {activeCharacter && (
+              <Link
+                href={`/tools/character-sheet?id=${activeCharacter.id}`}
+                onClick={() => setOpen(false)}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-700/40"
+              >
+                <FileText className="w-3.5 h-3.5" /> View Sheet
+              </Link>
+            )}
             <Link
               href="/tools/character-builder"
               onClick={() => setOpen(false)}

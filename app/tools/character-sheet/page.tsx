@@ -14,7 +14,7 @@ function CharacterSheetPageInner() {
   const searchParams = useSearchParams();
   const characterId = searchParams.get('id');
   
-  const { characters, loading: charactersLoading, saveCharacter } = useCharacters();
+  const { characters, loading: charactersLoading, saveCharacter, toCharacter } = useCharacters();
   const [character, setCharacter] = useState<Character | null>(null);
   const [showLevelUpModal, setShowLevelUpModal] = useState(searchParams.get('levelup') === '1');
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -24,11 +24,20 @@ function CharacterSheetPageInner() {
     if (!charactersLoading && characterId) {
       const foundCharacter = characters.find(c => c.id === characterId);
       if (foundCharacter) {
-        setCharacter(foundCharacter as any);
+        // Normalize the raw DB row (snake_case) into a proper Character —
+        // storing the row directly left currentStep/derivedStats undefined,
+        // which corrupted rows on the next save.
+        setCharacter(toCharacter(foundCharacter));
       }
     }
     setLoading(charactersLoading);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [characterId, characters, charactersLoading]);
+
+  // Re-open the modal if the user navigates here again with ?levelup=1
+  useEffect(() => {
+    if (searchParams.get('levelup') === '1') setShowLevelUpModal(true);
+  }, [searchParams]);
 
   const handleEdit = () => {
     if (character) {
@@ -70,7 +79,9 @@ function CharacterSheetPageInner() {
     }
   };
 
-  if (loading) {
+  // Only show the full-screen loader before the first successful load —
+  // background refetches (e.g. after a level-up save) shouldn't blank the sheet.
+  if (loading && !character) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white">Loading character...</div>

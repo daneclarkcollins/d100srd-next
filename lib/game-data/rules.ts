@@ -96,6 +96,26 @@ export function characteristicRoll(value: number): number {
   return value * 5;
 }
 
+/**
+ * The six paired characteristic pools shown on the sheet
+ * (effort/stamina/intellect/spirit/agility/charm — each ⌊(a+b)/2⌋).
+ * Recompute these whenever a characteristic changes (doc 007 §Increasing Characteristics).
+ */
+export function characteristicPools(c: Characteristics): {
+  effort: number; stamina: number; intellect: number;
+  spirit: number; agility: number; charm: number;
+} {
+  const half = (a: number, b: number) => Math.floor((a + b) / 2);
+  return {
+    effort: half(c.STR, c.CON),
+    stamina: half(c.CON, c.SIZ),
+    intellect: half(c.INT, c.ACU),
+    spirit: half(c.INT, c.SOC),
+    agility: half(c.DEX, c.ACU),
+    charm: half(c.SOC, c.INT),
+  };
+}
+
 /** Damage modifier by STR+SIZ (flat values per 002's table). */
 export function damageModifier(c: Characteristics): string {
   const t = c.STR + c.SIZ;

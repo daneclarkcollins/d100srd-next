@@ -10,18 +10,20 @@ import type { User } from '@supabase/supabase-js'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { supabase, user } = useSupabase()
+  const { supabase, user, authLoading } = useSupabase()
   const { characters, loading: charactersLoading, deleteCharacter, setActiveCharacter, toCharacter } = useCharacters()
-  const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
   const [deletingCharacter, setDeletingCharacter] = useState<string | null>(null)
+  const loading = authLoading
 
   useEffect(() => {
-    if (!user && !loading) {
+    // Only redirect once the auth check has actually finished — redirecting
+    // while the session was still being restored bounced signed-in users
+    // to /login on slow loads.
+    if (!authLoading && !user) {
       router.push('/login')
     }
-    setLoading(false)
-  }, [user, router, loading])
+  }, [user, router, authLoading])
 
   const handleSignOut = async () => {
     setSigningOut(true)

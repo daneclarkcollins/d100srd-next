@@ -15,8 +15,10 @@ import {
 } from '@/lib/advancement';
 import {
   hitPoints, spiritPoints, damageModifier, experienceBonus as xpBonusOf,
-  horrorResistance, movement, baseMana, manaCap, ADVANCEMENT_SKILL_CAP,
+  horrorResistance, movement, baseMana, manaCap, characteristicPools,
+  ADVANCEMENT_SKILL_CAP,
 } from '@/lib/game-data/rules';
+import { ADVANCED_SKILL_CAP } from '@/lib/advancement';
 import type { Characteristics } from '@/lib/game-data/rules';
 import { TALENTS } from '@/lib/game-data/talents';
 import {
@@ -45,7 +47,7 @@ const QUALITIES: { key: RollQuality; label: string }[] = [
 ];
 
 export default function LevelUpModal({ isOpen, onClose, character, characterId, onCharacterChange }: Props) {
-  const { advancement, save, loading, migrationNeeded } = useAdvancement(isOpen ? characterId : null);
+  const { advancement, save, loading, migrationNeeded, error } = useAdvancement(isOpen ? characterId : null);
   const [tab, setTab] = useState<Tab>('experience');
   const [xpResults, setXpResults] = useState<ExperienceRollResult[] | null>(null);
   const [talentFilter, setTalentFilter] = useState('');
@@ -64,24 +66,29 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
 
   if (!isOpen) return null;
 
-  const log = (text: string): AdvancementState['log'] => [
-    { at: new Date().toISOString(), text },
-    ...advancement.log,
-  ].slice(0, 100);
+  const logEntry = (text: string) => ({ at: new Date().toISOString(), text });
+  const withLog = (prev: AdvancementState, text: string): AdvancementState['log'] =>
+    [logEntry(text), ...prev.log].slice(0, 100);
 
   // ---------------------------------------------------------------- helpers
+  // All saves use the functional form so rapid actions never clobber each
+  // other with a stale render snapshot.
   const toggleCheck = (skill: string) => {
-    const has = advancement.experienceChecks.includes(skill);
-    save({
-      ...advancement,
-      experienceChecks: has
-        ? advancement.experienceChecks.filter((s) => s !== skill)
-        : [...advancement.experienceChecks, skill],
+    save((prev) => {
+      const has = prev.experienceChecks.includes(skill);
+      return {
+        ...prev,
+        experienceChecks: has
+          ? prev.experienceChecks.filter((s) => s !== skill)
+          : [...prev.experienceChecks, skill],
+      };
     });
   };
 
   const rollExperience = async () => {
-    const results = runExperienceRolls(advancement.experienceChecks, character.skills, xpBonus);
+    const results = runExperienceRolls(
+      advancement.experienceChecks, character.skills, xpBonus, Math.random, advancement.advancedSkillPick
+    );
     setXpResults(results);
     const improved = results.filter((r) => r.success && r.newRating !== r.rating);
     if (improved.length > 0) {
@@ -89,34 +96,51 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
       for (const r of improved) updatedSkills[r.skill] = r.newRating;
       await onCharacterChange({ ...character, skills: updatedSkills });
     }
-    const newMana = manaAfterLevelUp(advancement.mana, c);
-    const summary = `Experience rolls: ${improved.length}/${results.length} improved (+2 each)` +
-      (newMana && advancement.mana ? `; mana ${advancement.mana.max}→${newMana.max}` : '');
-    save({ ...advancement, experienceChecks: [], mana: newMana ?? advancement.mana, log: log(summary) });
-  };
-
-  const awardTp = (delta: number) => {
-    const next = Math.max(0, advancement.talentPointsEarned + delta);
-    save({
-      ...advancement,
-      talentPointsEarned: next,
-      log: delta > 0 ? log(`SG awarded ${delta} Talent Point${delta > 1 ? 's' : ''} (TPL now ${3 + next})`) : advancement.log,
+    save((prev) => {
+      const newMana = manaAfterLevelUp(prev.mana, c);
+      const summary = `Experience rolls: ${improved.length}/${results.length} improved` +
+        (newMana && prev.mana ? `; mana ${prev.mana.max}→${newMana.max}` : '');
+      return { ...prev, experienceChecks: [], mana: newMana ?? prev.mana, log: withLog(prev, summary) };
     });
   };
 
+  const awardTp = (delta: number) => {
+    save((prev) => {
+      const next = Math.max(0, prev.talentPointsEarned + delta);
+      return {
+        ...prev,
+        talentPointsEarned: next,
+        log: delta > 0 ? withLog(prev, `SG awarded ${delta} Talent Point${delta > 1 ? 's' : ''} (TPL now ${3 + next})`) : prev.log,
+      };
+    });
+  };
+
+  const adjustSaga = (delta: number) => {
+    save((prev) => ({ ...prev, sagaPoints: Math.max(0, prev.sagaPoints + delta) }));
+  };
+
   const learnTalent = (name: string) => {
-    save({ ...advancement, talentsKnown: [...advancement.talentsKnown, name], log: log(`Learned talent: ${name}`) });
+    save((prev) => ({ ...prev, talentsKnown: [...prev.talentsKnown, name], log: withLog(prev, `Learned talent: ${name}`) }));
   };
 
   const forgetTalent = (name: string) => {
-    save({ ...advancement, talentsKnown: advancement.talentsKnown.filter((t) => t !== name) });
+    save((prev) => ({
+      ...prev,
+      talentsKnown: prev.talentsKnown.filter((t) => t !== name),
+      advancedSkillPick: name === 'Advanced Skills' ? null : prev.advancedSkillPick,
+    }));
   };
 
   const enableMana = () => {
     const base = baseMana(c);
-    save({ ...advancement, mana: { current: base, max: base }, log: log(`Mana pool started at ${base} (ACU/2)`) });
+    save((prev) => ({ ...prev, mana: { current: base, max: base }, log: withLog(prev, `Mana pool started at ${base} (ACU/2)`) }));
   };
 
+  const hasResearchSkill = 'Research' in (character.skills ?? {});
+  const markResearchCheck = (prev: AdvancementState) =>
+    hasResearchSkill && !prev.experienceChecks.includes('Research')
+      ? [...prev.experienceChecks, 'Research']
+      : prev.experienceChecks;
 
   const applyTraining = async () => {
     if (!trainSkill) return;
@@ -125,21 +149,60 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
       setTrainResult(`${trainSkill} is already at ${current}% — training and research cap at ${TRAINING_SKILL_CAP}%. Only experience can push it higher.`);
       return;
     }
-    const gain = trainMode === 'training' ? trainingGain(trainQuality) : researchGain(trainQuality);
+
+    if (trainMode === 'research') {
+      // Canon (007 §Researching): after the time is spent, make an experience
+      // roll as normal — only if it succeeds does the skill gain 1d4 + the
+      // research modifier. The Research skill itself also earns an
+      // experience check for the effort.
+      const xp = runExperienceRolls([trainSkill], character.skills, xpBonus)[0];
+      if (!xp.success) {
+        setTrainResult(
+          `Research (${trainQuality}): experience roll ${xp.roll}+${xp.bonus}=${xp.total} vs ${current} — failed, no gain this time.` +
+          (hasResearchSkill ? ' Research gets an experience check.' : '')
+        );
+        save((prev) => ({
+          ...prev,
+          experienceChecks: markResearchCheck(prev),
+          log: withLog(prev, `Research: ${trainSkill} — experience roll failed, no gain`),
+        }));
+        return;
+      }
+      const gain = researchGain(trainQuality);
+      const next = applyTrainingCap(current, gain);
+      if (next !== current) {
+        await onCharacterChange({ ...character, skills: { ...character.skills, [trainSkill]: next } });
+      }
+      setTrainResult(
+        `Research (${trainQuality}): experience roll ${xp.roll}+${xp.bonus}=${xp.total} vs ${current} — success! ` +
+        `${trainSkill} ${current}% → ${next}% (1d4 + modifier = ${gain >= 0 ? '+' : ''}${gain})` +
+        (hasResearchSkill ? '. Research gets an experience check.' : '')
+      );
+      save((prev) => ({
+        ...prev,
+        experienceChecks: markResearchCheck(prev),
+        log: withLog(prev, `Research: ${trainSkill} ${current}%→${next}%`),
+      }));
+      return;
+    }
+
+    const gain = trainingGain(trainQuality);
     const next = applyTrainingCap(current, gain);
     if (next !== current) {
       await onCharacterChange({ ...character, skills: { ...character.skills, [trainSkill]: next } });
     }
-    const verb = trainMode === 'training' ? 'Training' : 'Research';
-    setTrainResult(`${verb} (${trainQuality}): ${trainSkill} ${current}% → ${next}% (${gain >= 0 ? '+' : ''}${gain})`);
-    save({ ...advancement, log: log(`${verb}: ${trainSkill} ${current}%→${next}%`) });
+    setTrainResult(`Training (${trainQuality}): ${trainSkill} ${current}% → ${next}% (${gain >= 0 ? '+' : ''}${gain})`);
+    save((prev) => ({ ...prev, log: withLog(prev, `Training: ${trainSkill} ${current}%→${next}%`) }));
   };
 
   const trainChar = async () => {
     const value = c[charToTrain];
     const updated: Characteristics = { ...c, [charToTrain]: value + 1 };
+    // Canon (007 §Increasing Characteristics): ALL associated attributes
+    // recompute — the six paired pools included.
     const derived = {
-      ...character.derivedStats,
+      ...(character.derivedStats ?? {}),
+      ...characteristicPools(updated),
       hitPoints: hitPoints(updated),
       spiritPoints: spiritPoints(updated),
       damageModifier: damageModifier(updated),
@@ -147,48 +210,70 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
       movementSpeed: movement(updated.SIZ),
       horrorResistance: horrorResistance(updated),
     };
-    await onCharacterChange({ ...character, characteristics: updated, derivedStats: derived });
-    // mana cap can grow with INT
-    const mana = advancement.mana
-      ? { current: advancement.mana.current, max: Math.min(advancement.mana.max, manaCap(updated)) }
-      : advancement.mana;
-    save({ ...advancement, mana, log: log(`Characteristic training: ${charToTrain} ${value}→${value + 1}`) });
+    await onCharacterChange({
+      ...character,
+      characteristics: updated,
+      derivedStats: derived,
+      speed: movement(updated.SIZ),
+    });
+    save((prev) => ({
+      ...prev,
+      // mana cap can move with INT
+      mana: prev.mana
+        ? { current: Math.min(prev.mana.current, manaCap(updated)), max: Math.min(prev.mana.max, manaCap(updated)) }
+        : prev.mana,
+      log: withLog(prev, `Characteristic training: ${charToTrain} ${value}→${value + 1}`),
+    }));
   };
 
   // Legacy items
   const slots = legacySlotsAtTpl(tpl);
+  /** One power per unlocked tier of the item's advancement table. */
+  const powersAllowed = (type: LegacyItem['type']) =>
+    LEGACY_ADVANCEMENTS[type].filter((r) => tpl >= r.tpl).length;
+
   const addLegacyItem = () => {
     if (!newItem.name.trim()) return;
-    const item: LegacyItem = {
-      id: crypto.randomUUID(),
-      name: newItem.name.trim(),
-      type: newItem.type,
-      description: newItem.description.trim() || undefined,
-      gainedAtTpl: tpl,
-      powers: [],
-    };
-    save({ ...advancement, legacyItems: [...advancement.legacyItems, item], log: log(`Gained Legacy Item: ${item.name}`) });
+    save((prev) => {
+      const tplNow = 3 + prev.talentPointsEarned;
+      const maxItems = Math.min(legacySlotsAtTpl(tplNow), MAX_LEGACY_ITEMS);
+      const typeDef = LEGACY_ITEM_TYPES.find((t) => t.key === newItem.type);
+      const ofType = prev.legacyItems.filter((i) => i.type === newItem.type).length;
+      if (prev.legacyItems.length >= maxItems) return prev;
+      if (typeDef && ofType >= typeDef.maxOfType) return prev;
+      const item: LegacyItem = {
+        id: crypto.randomUUID(),
+        name: newItem.name.trim(),
+        type: newItem.type,
+        description: newItem.description.trim() || undefined,
+        gainedAtTpl: tplNow,
+        powers: [],
+      };
+      return { ...prev, legacyItems: [...prev.legacyItems, item], log: withLog(prev, `Gained Legacy Item: ${item.name}`) };
+    });
     setNewItem({ name: '', type: 'attack', description: '' });
   };
   const removeLegacyItem = (id: string) => {
-    save({ ...advancement, legacyItems: advancement.legacyItems.filter((i) => i.id !== id) });
+    save((prev) => ({ ...prev, legacyItems: prev.legacyItems.filter((i) => i.id !== id) }));
   };
   const addPower = (id: string, tplTier: number, text: string) => {
     if (!text.trim()) return;
-    save({
-      ...advancement,
-      legacyItems: advancement.legacyItems.map((i) =>
-        i.id === id ? { ...i, powers: [...i.powers, { tpl: tplTier, text: text.trim() }] } : i
-      ),
-    });
+    save((prev) => ({
+      ...prev,
+      legacyItems: prev.legacyItems.map((i) => {
+        if (i.id !== id) return i;
+        if (i.powers.length >= powersAllowed(i.type)) return i; // cap: one per unlocked tier
+        return { ...i, powers: [...i.powers, { tpl: tplTier, text: text.trim() }] };
+      }),
+    }));
   };
   const removePower = (id: string, idx: number) => {
-    save({
-      ...advancement,
-      legacyItems: advancement.legacyItems.map((i) =>
+    save((prev) => ({
+      ...prev,
+      legacyItems: prev.legacyItems.map((i) =>
         i.id === id ? { ...i, powers: i.powers.filter((_, j) => j !== idx) } : i
       ),
-    });
+    }));
   };
 
   const typeCount = (t: LegacyItem['type']) => advancement.legacyItems.filter((i) => i.type === t).length;
@@ -213,9 +298,14 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
             <TrendingUp className="w-6 h-6 text-blue-400" />
             <div>
               <h2 className="text-xl font-bold text-white">Level Up — {character.name || 'Unnamed'}</h2>
-              <p className="text-xs text-slate-400">
-                Talent Point Level {tpl} • {unspentTalentPoints(advancement)} TP unspent • XP bonus +{xpBonus}
-                {advancement.mana ? ` • Mana ${advancement.mana.current}/${advancement.mana.max}` : ''}
+              <p className="text-xs text-slate-400 flex items-center flex-wrap gap-x-1.5">
+                <span>
+                  Talent Point Level {tpl} • {unspentTalentPoints(advancement)} TP unspent • XP bonus +{xpBonus}
+                  {advancement.mana ? ` • Mana ${advancement.mana.current}/${advancement.mana.max}` : ''}
+                  {' '}• Saga Points <span className="text-white font-semibold">{advancement.sagaPoints}</span>
+                </span>
+                <button onClick={() => adjustSaga(1)} className="p-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="Gain a Saga Point"><Plus className="w-3 h-3" /></button>
+                <button onClick={() => adjustSaga(-1)} className="p-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="Spend a Saga Point"><Minus className="w-3 h-3" /></button>
               </p>
             </div>
           </div>
@@ -223,6 +313,13 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {error && (
+          <div className="mx-6 mt-4 flex items-start gap-2 bg-red-950/60 border border-red-800 rounded-lg px-4 py-3 text-sm text-red-200">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>Couldn&apos;t save advancement: {error}</span>
+          </div>
+        )}
 
         {migrationNeeded && (
           <div className="mx-6 mt-4 flex items-start gap-2 bg-amber-950/60 border border-amber-800 rounded-lg px-4 py-3 text-sm text-amber-200">
@@ -260,7 +357,8 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
               <p className="text-sm text-slate-400 mb-4">
                 During play, check each skill your character used successfully in a dramatic moment.
                 At level-up, each checked skill rolls d100 + your experience bonus (+{xpBonus}) —
-                beat the current rating and the skill gains +2 (cap {ADVANCEMENT_SKILL_CAP} without a Talent).
+                beat the current rating and the skill gains +2 (cap {ADVANCEMENT_SKILL_CAP} without a Talent
+                {advancement.advancedSkillPick ? `; ${advancement.advancedSkillPick} caps at ${ADVANCED_SKILL_CAP} via Advanced Skills` : ''}).
                 {advancement.mana ? ' Casters also gain 2 mana.' : ''}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-4">
@@ -310,9 +408,9 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
                           <td className="px-3 py-2 text-slate-300">{r.roll}+{r.bonus}={r.total} vs {r.rating}</td>
                           <td className="px-3 py-2">
                             {r.success && r.newRating > r.rating ? (
-                              <span className="text-green-400 font-medium">+2 → {r.newRating}%</span>
+                              <span className="text-green-400 font-medium">+{r.newRating - r.rating} → {r.newRating}%{r.capped ? ' (cap)' : ''}</span>
                             ) : r.capped ? (
-                              <span className="text-amber-400">at cap ({ADVANCEMENT_SKILL_CAP}%)</span>
+                              <span className="text-amber-400">at cap ({r.skill === advancement.advancedSkillPick ? ADVANCED_SKILL_CAP : ADVANCEMENT_SKILL_CAP}%)</span>
                             ) : (
                               <span className="text-slate-500">no gain</span>
                             )}
@@ -339,6 +437,29 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
                   </button>
                 )}
               </div>
+
+              {advancement.talentsKnown.includes('Advanced Skills') && (
+                <div className="mb-5 flex flex-wrap items-center gap-2 bg-slate-800/60 rounded-md px-3 py-2 text-sm">
+                  <span className="text-slate-300">Advanced Skills — pick the one skill that can advance to {ADVANCED_SKILL_CAP}%:</span>
+                  <select
+                    value={advancement.advancedSkillPick ?? ''}
+                    onChange={(e) => {
+                      const pick = e.target.value || null;
+                      save((prev) => ({
+                        ...prev,
+                        advancedSkillPick: pick,
+                        log: pick ? withLog(prev, `Advanced Skills: ${pick} can now advance to ${ADVANCED_SKILL_CAP}%`) : prev.log,
+                      }));
+                    }}
+                    className="bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white"
+                  >
+                    <option value="">Choose skill…</option>
+                    {skillNames.map((s) => (
+                      <option key={s} value={s}>{s} ({character.skills[s]}%)</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {advancement.talentsKnown.length > 0 && (
                 <div className="mb-5">
@@ -474,6 +595,8 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
               {advancement.legacyItems.map((item) => {
                 const typeLabel = LEGACY_ITEM_TYPES.find((t) => t.key === item.type)?.label ?? item.type;
                 const table = LEGACY_ADVANCEMENTS[item.type];
+                const allowed = powersAllowed(item.type);
+                const atPowerCap = item.powers.length >= allowed;
                 return (
                   <div key={item.id} className="bg-slate-800/60 border border-slate-700 rounded-lg p-4 mb-4">
                     <div className="flex items-start justify-between gap-3">
@@ -488,7 +611,9 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
                     </div>
 
                     <div className="mt-3">
-                      <h5 className="text-[11px] uppercase tracking-wide text-slate-500 mb-1.5">Powers</h5>
+                      <h5 className="text-[11px] uppercase tracking-wide text-slate-500 mb-1.5">
+                        Powers ({item.powers.length}/{allowed} — one per unlocked tier)
+                      </h5>
                       {item.powers.length === 0 && <p className="text-xs text-slate-500 mb-2">None chosen yet.</p>}
                       <ul className="space-y-1 mb-3">
                         {item.powers.map((p, i) => (
@@ -502,28 +627,47 @@ export default function LevelUpModal({ isOpen, onClose, character, characterId, 
                       <details className="text-xs text-slate-400">
                         <summary className="cursor-pointer hover:text-white">Add a power (guidelines for this type)</summary>
                         <div className="mt-2 space-y-1.5">
-                          {table.map((row) => (
-                            <div key={row.tpl} className={`flex items-start gap-2 ${tpl >= row.tpl ? '' : 'opacity-40'}`}>
-                              <span className="shrink-0 w-12 text-blue-400">TPL {row.tpl}</span>
-                              <span className="flex-1">{row.text}</span>
-                              <button
-                                onClick={() => addPower(item.id, row.tpl, row.text)}
-                                disabled={tpl < row.tpl}
-                                className="shrink-0 text-blue-400 hover:text-blue-300 disabled:cursor-not-allowed"
-                              >
-                                + take
-                              </button>
-                            </div>
-                          ))}
+                          {table.map((row) => {
+                            const taken = item.powers.some((p) => p.text === row.text);
+                            return (
+                              <div key={row.tpl} className={`flex items-start gap-2 ${tpl >= row.tpl ? '' : 'opacity-40'}`}>
+                                <span className="shrink-0 w-12 text-blue-400">TPL {row.tpl}</span>
+                                <span className="flex-1">{row.text}</span>
+                                {taken ? (
+                                  <span className="shrink-0 text-green-500">taken</span>
+                                ) : (
+                                  <button
+                                    onClick={() => addPower(item.id, row.tpl, row.text)}
+                                    disabled={tpl < row.tpl || atPowerCap}
+                                    className="shrink-0 text-blue-400 hover:text-blue-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    + take
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
                           <div className="pt-2 border-t border-slate-700 mt-2">
                             <p className="mb-1 text-slate-500">Tiered abilities (stackable — or invent your own with your SG):</p>
                             {LEGACY_TIERED_ABILITIES.map((a) => (
                               <div key={a} className="flex items-start gap-2">
                                 <span className="flex-1">{a}</span>
-                                <button onClick={() => addPower(item.id, tpl, a)} className="shrink-0 text-blue-400 hover:text-blue-300">+ take</button>
+                                <button
+                                  onClick={() => addPower(item.id, tpl, a)}
+                                  disabled={atPowerCap}
+                                  className="shrink-0 text-blue-400 hover:text-blue-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  + take
+                                </button>
                               </div>
                             ))}
-                            <CustomPowerInput onAdd={(text) => addPower(item.id, tpl, text)} />
+                            {atPowerCap ? (
+                              <p className="mt-2 text-amber-400/80">
+                                All {allowed} power slot{allowed === 1 ? '' : 's'} for TPL {tpl} used — the next unlocks as your TPL grows.
+                              </p>
+                            ) : (
+                              <CustomPowerInput onAdd={(text) => addPower(item.id, tpl, text)} />
+                            )}
                           </div>
                         </div>
                       </details>

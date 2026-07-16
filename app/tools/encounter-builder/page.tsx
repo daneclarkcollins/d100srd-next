@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Minus, X, Swords, Users, Search } from 'lucide-react';
 import {
@@ -30,7 +30,9 @@ export default function EncounterBuilderPage() {
   const [heroes, setHeroes] = useState<number[]>([3, 3, 3, 3]);
   const [enemies, setEnemies] = useState<EnemyRow[]>([]);
   const [query, setQuery] = useState('');
-  const [nextId, setNextId] = useState(1);
+  // Monotonic id counter — a ref (not state) so two adds inside one React
+  // batch can't hand out the same id.
+  const nextIdRef = useRef(1);
 
   const pcv = heroes.reduce((a, b) => a + b, 0);
 
@@ -63,9 +65,8 @@ export default function EncounterBuilderPage() {
       if (existing) {
         return prev.map((e) => (e === existing ? { ...e, count: e.count + 1 } : e));
       }
-      return [...prev, { id: nextId, block, tier: 'standard', count: 1 }];
+      return [...prev, { id: nextIdRef.current++, block, tier: 'standard', count: 1 }];
     });
-    setNextId((n) => n + 1);
     setQuery('');
   };
 

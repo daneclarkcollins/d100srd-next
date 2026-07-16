@@ -53,6 +53,8 @@ export interface AdvancementState {
   experienceChecks: string[];
   /** Mana pool for casters; null/undefined for non-casters. */
   mana?: { current: number; max: number } | null;
+  /** Skill chosen for the Advanced Skills talent (cap 95 instead of 90). */
+  advancedSkillPick?: string | null;
   sagaPoints: number;
   legacyItems: LegacyItem[];
   log: AdvancementLogEntry[];
@@ -135,19 +137,24 @@ export interface ExperienceRollResult {
   capped: boolean;
 }
 
+/** Cap for the one skill named by the Advanced Skills talent. */
+export const ADVANCED_SKILL_CAP = 95;
+
 /**
  * Run experience rolls for every checked skill.
  * Success when roll + bonus > current rating (doc 007). +2 on success,
- * capped at 90 (95 for a skill named by the Advanced Skills talent — the
- * cap here stays 90; SG applies the talent's exception manually).
+ * capped at 90 — or 95 for the skill named by the Advanced Skills talent
+ * (pass it as `advancedSkillPick`).
  */
 export function runExperienceRolls(
   checks: string[],
   skillRatings: Record<string, number>,
   experienceBonus: number,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
+  advancedSkillPick?: string | null
 ): ExperienceRollResult[] {
   return checks.map((skill) => {
+    const cap = skill === advancedSkillPick ? ADVANCED_SKILL_CAP : ADVANCEMENT_SKILL_CAP;
     const rating = skillRatings[skill] ?? 0;
     const roll = Math.floor(rng() * 100) + 1;
     const total = roll + experienceBonus;
@@ -155,9 +162,9 @@ export function runExperienceRolls(
     let newRating = rating;
     let capped = false;
     if (success) {
-      newRating = Math.min(rating + EXPERIENCE_GAIN, ADVANCEMENT_SKILL_CAP);
-      capped = rating + EXPERIENCE_GAIN > ADVANCEMENT_SKILL_CAP;
-      if (rating >= ADVANCEMENT_SKILL_CAP) {
+      newRating = Math.min(rating + EXPERIENCE_GAIN, cap);
+      capped = rating + EXPERIENCE_GAIN > cap;
+      if (rating >= cap) {
         newRating = rating;
         capped = true;
       }
@@ -198,15 +205,23 @@ export function trainingGain(quality: RollQuality, rng: () => number = Math.rand
   }
 }
 
-/** Research check result → modifier; gain is +1d4 + modifier after a successful experience roll. */
+/**
+ * Research gain (doc 007 §Researching, lines 436–438): the Research skill
+ * check's quality sets a MODIFIER to the 1d4 gain — special +1, critical +2,
+ * failure −1, fumble −2 — and the gain only happens at all after a
+ * successful experience roll on the skill being researched (the caller
+ * gates on that roll; see canon: "After the required time is spent, make an
+ * experience roll as normal. If the roll succeeds, increase the skill by
+ * +1d4 plus the research modifier.").
+ */
 export function researchGain(quality: RollQuality, rng: () => number = Math.random): number {
   const d4 = () => Math.floor(rng() * 4) + 1;
   switch (quality) {
     case 'critical': return d4() + 2;
     case 'special': return d4() + 1;
     case 'success': return d4();
-    case 'failure': return -1;
-    case 'fumble': return -2;
+    case 'failure': return d4() - 1;
+    case 'fumble': return d4() - 2;
   }
 }
 
