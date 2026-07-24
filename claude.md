@@ -91,6 +91,19 @@ hooks/useCharacters.ts         # Supabase character CRUD (snake_case rows ↔ ca
 - [x] Equipment data complete: shields, ammunition, mounts, vehicles, siege weapons
 - [x] content/tools WordPress exports retired (superseded by real tools)
 - [x] Live HP/SP tracking (CharacterQuickStats) + print/PDF export on the character sheet
+- [x] Level Up feature (lib/advancement.ts + 4-tab modal): experience checks/rolls, talents + TP, training/research, characteristic training, mana, Legacy Items, Saga Points, Advanced Skills 95-cap (advancement JSONB column; migration run 2026-07-16)
+- [x] Full review pass (2026-07-24, commit 0267d09): fixed save-path data loss (is_active/current_step regressions, raw-row normalization, stale-cache reverts), advancement write races (functional+serialized saves), canon research flow (experience-roll gate, d4 modifiers, Research check), legacy power caps, switcher dead link, auth-race redirect
+- [x] Random Name Generator (lib/name-generator.ts, doc-002 phonologies per species + Elfling long true names): standalone /tools/name-generator + builder "Roll a name" + quick generator uses it
 - [ ] Shareable character links — needs a Supabase schema addition (share token + RLS policy); requires dashboard access
 - [ ] End-to-end auth flow verification against live Supabase (needs a real signup)
 - [ ] Admin content editing (or accept the Drive→re-import pipeline as the workflow — recommend the latter)
+
+## Feature roadmap (from the 2026-07-24 D&D Beyond research, Dane-prioritized order TBD)
+1. Campaigns: SG creates, players join, party dashboard (fits PCV/CV math) — M
+2. Shared game log + live dice via Supabase Realtime Broadcast — S–M
+3. Run-mode combat tracker fed by the Encounter Builder — M
+4. Share links for sheets/encounters (pairs with the schema item above) — S
+5. Conditions/status tracking on the sheet widget — S
+6. Homebrew creator, monsters first (plugs into Encounter Builder) — M–L
+7. Campaign notes/session log — S–M; then campaign homebrew sharing, rollable CV-budget tables, PWA/offline sheet
+Skipped deliberately: maps/VTT, marketplace, forums, native apps, public API.

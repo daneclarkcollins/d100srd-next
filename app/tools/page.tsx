@@ -45,8 +45,8 @@ export default function ToolsPage() {
     {
       title: 'Name Generator',
       href: '/tools/name-generator',
-      description: 'Generate authentic names for characters, places, and organizations that fit the SagaBorn setting.',
-      status: 'Planned',
+      description: 'Roll names that sound like they belong — every species gets its own style, built from the rulebook\'s common-name lists and naming notes. Elflings even get their long true names.',
+      status: 'Available',
       icon: '📝'
     }
   ];

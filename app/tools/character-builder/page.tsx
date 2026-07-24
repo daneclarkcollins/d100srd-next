@@ -3,8 +3,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Save, RotateCcw, Printer, ChevronLeft, Dice6, Upload, Download, Users, Check, X, Edit, Plus, ArrowLeft, TrendingUp } from 'lucide-react';
-import { Character, SpeciesChoice, createNewCharacter } from '@/lib/character-data';
+import { Character, SpeciesChoice, createNewCharacter, biologyToSpeciesName } from '@/lib/character-data';
 import { professionFunds } from '@/lib/character-data';
+import { generateName, isNameSpecies } from '@/lib/name-generator';
 import { rollDice as rollDiceExpr } from '@/lib/game-data/dice';
 import SpeciesSelection from '@/components/CharacterBuilder/SpeciesSelection';
 import SkillSelection from '@/components/CharacterBuilder/SkillSelection';
@@ -260,6 +261,13 @@ function CharacterBuilderInner() {
 
   const handleNameChange = (name: string) => {
     setCharacter({ ...character, name });
+  };
+
+  // Roll a species-appropriate random name (doc 002 phonologies)
+  const handleRollName = () => {
+    const speciesName = biologyToSpeciesName(character.biology) ?? character.species;
+    const rolled = generateName(speciesName && isNameSpecies(speciesName) ? speciesName : 'Any');
+    setCharacter({ ...character, name: rolled.name });
   };
 
   const handleCharacteristicRoll = () => {
@@ -848,14 +856,27 @@ function CharacterBuilderInner() {
                     <label htmlFor="character-name" className="block text-sm font-medium text-slate-300 mb-2">
                       Enter your character's name:
                     </label>
-                    <input
-                      id="character-name"
-                      type="text"
-                      value={character.name}
-                      onChange={(e) => handleNameChange(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter character name..."
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        id="character-name"
+                        type="text"
+                        value={character.name}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter character name..."
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRollName}
+                        title={`Roll a random ${biologyToSpeciesName(character.biology) ?? ''} name`.replace('  ', ' ')}
+                        className="shrink-0 inline-flex items-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-200 transition-colors"
+                      >
+                        <Dice6 className="w-4 h-4" /> Roll a name
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1.5">
+                      Stuck? Roll one — names are generated in your species&apos; own style, straight from the rulebook&apos;s naming notes.
+                    </p>
                   </div>
                   <button
                     onClick={() => setCharacter({ ...character, currentStep: 'characteristics' })}

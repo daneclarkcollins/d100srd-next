@@ -25,20 +25,11 @@ import {
   RANDOM_METHOD, archetypeFromRoll,
 } from './game-data/rules';
 import { rollDice, d100 } from './game-data/dice';
+import { makeRng, generateName, isNameSpecies } from './name-generator';
 
-// ---------------------------------------------------------------------------
-// Seeded RNG (mulberry32) — reproducible characters
-// ---------------------------------------------------------------------------
-
-export function makeRng(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+// Seeded RNG (mulberry32) lives in name-generator now; re-exported here so
+// existing imports (scripts, pages) keep working.
+export { makeRng };
 
 const pick = <T,>(arr: readonly T[], rng: () => number): T =>
   arr[Math.floor(rng() * arr.length)];
@@ -414,7 +405,11 @@ export function generateCharacter(opts: GeneratorOptions = {}): GeneratedCharact
   const languages = ['Common', ...shuffle(LANGUAGES.filter((l) => l !== 'Common'), rng).slice(0, Math.max(0, langCount - 1))]
     .map((l) => `${l} (${STARTING_LANGUAGE_RATING}%)`);
 
-  const name = species.commonNames?.length ? pick(species.commonNames, rng) : 'Unnamed';
+  // Full per-species name generation (doc 002 phonologies) — canon common
+  // names still appear occasionally as anchors.
+  const name = isNameSpecies(species.name)
+    ? generateName(species.name, rng).name
+    : (species.commonNames?.length ? pick(species.commonNames, rng) : 'Unnamed');
 
   return {
     seed,

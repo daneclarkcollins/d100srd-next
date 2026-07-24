@@ -4,6 +4,7 @@
  * Run: npx tsx scripts/test-generator.ts
  */
 import { generateCharacter } from '../lib/character-generator';
+import { generateName, generateNames, NAME_SPECIES, makeRng as nameRng } from '../lib/name-generator';
 import { SPECIES, PROFESSIONS } from '../lib/game-data';
 import { CREATION_SKILL_CAP } from '../lib/game-data/rules';
 
@@ -77,6 +78,28 @@ for (let i = 0; i < 2000; i++) {
 }
 const missing = PROFESSIONS.filter((p) => !seen.has(p.name)).map((p) => p.name);
 if (missing.length > 3) { failures++; console.error(`  ✗ professions never rolled in 2000 tries: ${missing.join(', ')}`); }
+
+// --- name generator ---------------------------------------------------------
+{
+  for (const sp of NAME_SPECIES) {
+    const batch = generateNames(sp, 12, nameRng(1234));
+    if (batch.length !== 12) { failures++; console.error(`  ✗ ${sp}: batch of 12 unique names`); }
+    for (const n of batch) {
+      if (!(n.name.length >= 2 && n.name.length <= 14)) { failures++; console.error(`  ✗ ${sp}: name length sane (${n.name})`); }
+      if (!/^[A-Z][a-z]+$/.test(n.name) && !/^[A-Z][a-z]*$/.test(n.name)) { failures++; console.error(`  ✗ ${sp}: name shape (${n.name})`); }
+      if (n.species !== sp) { failures++; console.error(`  ✗ ${sp}: species tag`); }
+    }
+    const a = generateNames(sp, 6, nameRng(777)).map((n: { name: string }) => n.name).join(',');
+    const b = generateNames(sp, 6, nameRng(777)).map((n: { name: string }) => n.name).join(',');
+    if (a !== b) { failures++; console.error(`  ✗ ${sp}: names reproducible from seed`); }
+  }
+  const anyBatch = generateNames('Any', 20, nameRng(5));
+  if (anyBatch.length !== 20) { failures++; console.error('  ✗ Any-species batch of 20'); }
+  const elfling = Array.from({ length: 30 }, (_, i) => generateName('Elfling', nameRng(100 + i)));
+  if (!elfling.some((n: { detail?: string }) => n.detail?.startsWith('short for '))) {
+    failures++; console.error('  ✗ Elflings sometimes carry a long true name');
+  }
+}
 
 console.log(`\n${failures === 0 ? '✓ all generator invariants hold' : `${failures} failure(s)`}`);
 const sample = generateCharacter({ seed: 20260714 });

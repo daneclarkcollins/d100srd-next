@@ -92,6 +92,12 @@ const splitResult = (result: string): { name: string; description: string } => {
 };
 
 /** Biology row name (as printed in the lifepath docs) → Species record name. */
+/** Map a builder biology label (e.g. 'Dworven', 'Elven') to its canonical species name. */
+export function biologyToSpeciesName(biology: string | null | undefined): string | null {
+  if (!biology) return null;
+  return BIOLOGY_TO_SPECIES[biology] ?? biology;
+}
+
 const BIOLOGY_TO_SPECIES: Record<string, string> = {
   Teran: 'Teran',
   Dworven: 'Dworv',
