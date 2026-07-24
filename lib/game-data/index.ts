@@ -14,3 +14,5 @@ export { SPELLS } from './spells';
 export { WEAPONS, ARMOR, GEAR, SHIELDS, AMMUNITION, MOUNTS, VEHICLES, SIEGE_WEAPONS } from './equipment';
 export { CREATURES, CREATURE_TIERS, ENCOUNTER_DIFFICULTY, difficultyFor } from './creatures';
 export type { CreatureStatBlock } from './creatures';
+export { CONDITIONS } from './conditions';
+export type { Condition } from './conditions';

@@ -94,6 +94,7 @@ hooks/useCharacters.ts         # Supabase character CRUD (snake_case rows ↔ ca
 - [x] Level Up feature (lib/advancement.ts + 4-tab modal): experience checks/rolls, talents + TP, training/research, characteristic training, mana, Legacy Items, Saga Points, Advanced Skills 95-cap (advancement JSONB column; migration run 2026-07-16)
 - [x] Full review pass (2026-07-24, commit 0267d09): fixed save-path data loss (is_active/current_step regressions, raw-row normalization, stale-cache reverts), advancement write races (functional+serialized saves), canon research flow (experience-roll gate, d4 modifiers, Research check), legacy power caps, switcher dead link, auth-race redirect
 - [x] Random Name Generator (lib/name-generator.ts, doc-002 phonologies per species + Elfling long true names): standalone /tools/name-generator + builder "Roll a name" + quick generator uses it
+- [x] Combat Tracker (/tools/combat-tracker): DEX+1d10 initiative held per combat (008), round/turn order, HP with Compendium tier adjustments (Minion ½/Champion 2×/Boss 3×), canonical Effects as conditions (lib/game-data/conditions.ts), Encounter Builder "Run in Combat Tracker" handoff, active-character import; builder's Level Up button now saves + routes to the sheet
 - [ ] Shareable character links — needs a Supabase schema addition (share token + RLS policy); requires dashboard access
 - [ ] End-to-end auth flow verification against live Supabase (needs a real signup)
 - [ ] Admin content editing (or accept the Drive→re-import pipeline as the workflow — recommend the latter)

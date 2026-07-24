@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Save, RotateCcw, Printer, ChevronLeft, Dice6, Upload, Download, Users, Check, X, Edit, Plus, ArrowLeft, TrendingUp } from 'lucide-react';
 import { Character, SpeciesChoice, createNewCharacter, biologyToSpeciesName } from '@/lib/character-data';
 import { professionFunds } from '@/lib/character-data';
@@ -11,7 +11,6 @@ import SpeciesSelection from '@/components/CharacterBuilder/SpeciesSelection';
 import SkillSelection from '@/components/CharacterBuilder/SkillSelection';
 import CharacterList from '@/components/CharacterList';
 import CharacterSheet from '@/components/CharacterSheet';
-import Modal from '@/components/Modal/Modal';
 import { useSupabase } from '@/components/SupabaseProvider';
 import { useCharacters } from '@/hooks/useCharacters';
 
@@ -133,10 +132,10 @@ function CharacterBuilderInner() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importData, setImportData] = useState('');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
 
   const isAdvancedMode = characterMode === 'advanced';
   const isEditing = !!searchParams.get('edit');
+  const router = useRouter();
 
   // Handle URL parameters for edit mode
   useEffect(() => {
@@ -243,6 +242,26 @@ function CharacterBuilderInner() {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       alert(`Failed to save character: ${errorMessage}`);
       return false;
+    }
+  };
+
+  // Level Up lives on the character sheet — save (if needed) and jump
+  // straight there with the modal already open.
+  const handleLevelUpFromBuilder = async () => {
+    if (currentCharacterId) {
+      router.push(`/tools/character-sheet?id=${currentCharacterId}&levelup=1`);
+      return;
+    }
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    try {
+      const savedChar = await saveCharacter(character, undefined);
+      setCurrentCharacterId(savedChar.id);
+      router.push(`/tools/character-sheet?id=${savedChar.id}&levelup=1`);
+    } catch (err) {
+      console.error('Failed to save before leveling up:', err);
     }
   };
 
@@ -1237,7 +1256,7 @@ function CharacterBuilderInner() {
                   onSave={() => saveCharacterToDatabase()}
                   onPrint={printCharacter}
                   onCreateNew={handleCreateNew}
-                  onLevelUp={() => setShowLevelUpModal(true)}
+                  onLevelUp={handleLevelUpFromBuilder}
                   isSaving={charactersLoading}
                   saveSuccess={saveSuccess}
                 />
@@ -1364,30 +1383,6 @@ function CharacterBuilderInner() {
             </div>
           </div>
         )}
-
-        {/* Level Up Modal */}
-        <Modal
-          isOpen={showLevelUpModal}
-          onClose={() => setShowLevelUpModal(false)}
-          title="Level Up"
-          size="sm"
-        >
-          <div className="text-center py-4">
-            <div className="text-6xl mb-4">🎲</div>
-            <p className="text-white text-lg mb-2">
-              Level up from the character sheet
-            </p>
-            <p className="text-slate-400">
-              Open your saved character&apos;s sheet and hit Level Up — experience rolls, talents, training, and Legacy Items live there.
-            </p>
-            <button
-              onClick={() => setShowLevelUpModal(false)}
-              className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Got it!
-            </button>
-          </div>
-        </Modal>
 
         {/* Import Modal */}
         {importModalOpen && (

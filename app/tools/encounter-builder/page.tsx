@@ -2,7 +2,8 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Minus, X, Swords, Users, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Plus, Minus, X, Swords, Users, Search, Play } from 'lucide-react';
 import {
   CREATURES, CREATURE_TIERS, ENCOUNTER_DIFFICULTY, difficultyFor,
 } from '@/lib/game-data';
@@ -30,6 +31,7 @@ export default function EncounterBuilderPage() {
   const [heroes, setHeroes] = useState<number[]>([3, 3, 3, 3]);
   const [enemies, setEnemies] = useState<EnemyRow[]>([]);
   const [query, setQuery] = useState('');
+  const router = useRouter();
   // Monotonic id counter — a ref (not state) so two adds inside one React
   // batch can't hand out the same id.
   const nextIdRef = useRef(1);
@@ -76,6 +78,20 @@ export default function EncounterBuilderPage() {
         .map((e) => (e.id === id ? { ...e, ...patch } : e))
         .filter((e) => e.count > 0)
     );
+
+  // Hand the built encounter to the Combat Tracker (sessionStorage; the
+  // tracker consumes and clears it on load). Key literal mirrored there.
+  const runInTracker = () => {
+    try {
+      sessionStorage.setItem('sagaborn-encounter-handoff', JSON.stringify({
+        heroes,
+        enemies: enemies.map((e) => ({
+          slug: e.block.slug, name: e.block.name, tier: e.tier, count: e.count,
+        })),
+      }));
+    } catch { /* storage unavailable — tracker will just start empty */ }
+    router.push('/tools/combat-tracker');
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -267,6 +283,15 @@ export default function EncounterBuilderPage() {
             Action economy matters more than raw CV: six weaker foes usually make a livelier fight
             than one strong one. Champion/Boss upgrades are from the Creature Compendium.
           </p>
+
+          {enemies.length > 0 && (
+            <button
+              onClick={runInTracker}
+              className="mt-4 inline-flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white font-semibold px-5 py-2.5 rounded-lg"
+            >
+              <Play className="w-4 h-4" /> Run in Combat Tracker
+            </button>
+          )}
         </div>
       </div>
     </div>

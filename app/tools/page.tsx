@@ -38,8 +38,8 @@ export default function ToolsPage() {
     {
       title: 'Combat Tracker',
       href: '/tools/combat-tracker',
-      description: 'Manage initiative, track hit points, and organize combat encounters with multiple participants.',
-      status: 'Planned',
+      description: 'Run the fight by the book: DEX + 1d10 initiative held for the combat, HP tracking with Compendium tier adjustments, canonical conditions, and round-by-round turn order. Feeds straight from the Encounter Builder.',
+      status: 'Available',
       icon: '⚔️'
     },
     {
