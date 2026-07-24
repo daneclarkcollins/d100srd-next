@@ -354,10 +354,12 @@ export default function SpeciesSelection({ currentStep, onSelectionMade, onStats
             </div>
           )}
 
-          <div className="text-center">
+          {/* Mike (2026-07-24): keep Confirm visible on long tables — the
+              button now floats bottom-right and follows the scroll. */}
+          <div className="sticky bottom-4 z-20 flex justify-end pointer-events-none">
             <button
               onClick={handleConfirmSelection}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+              className="pointer-events-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-xl shadow-black/40"
             >
               Confirm Selection: {selectedChoice.result}
             </button>

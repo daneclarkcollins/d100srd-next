@@ -137,6 +137,12 @@ function CharacterBuilderInner() {
   const isEditing = !!searchParams.get('edit');
   const router = useRouter();
 
+  // Mike (2026-07-24): after confirming a selection on a long page, Chrome
+  // stayed scrolled down. Snap back to the top whenever the step changes.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [character.currentStep, characterMode]);
+
   // Handle URL parameters for edit mode
   useEffect(() => {
     const editId = searchParams.get('edit');
@@ -766,7 +772,9 @@ function CharacterBuilderInner() {
                 onClick={() => setCharacterMode('normal')}
                 className="border border-slate-600 rounded-lg p-6 hover:bg-slate-700 cursor-pointer transition-colors bg-slate-800 hover:border-blue-500"
               >
-                <h3 className="text-2xl font-bold text-blue-300 mb-4">Normal Mode</h3>
+                <h3 className="text-2xl font-bold text-blue-300 mb-4">
+                  Normal Mode <span className="text-base font-semibold text-slate-400">(Starter Characters)</span>
+                </h3>
                 <div className="text-slate-300 space-y-2 text-left">
                   <p>• Roll dice or use point-buy for characteristics</p>
                   <p>• Choose from profession and species tables</p>

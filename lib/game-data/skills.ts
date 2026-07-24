@@ -111,7 +111,11 @@ export const SKILLS: Skill[] = [
   },
   {
     name: 'Dodge',
-    category: 'Dexterous', // errata #7: Dodge changed to Dexterous
+    // Mike's Tavern Issues sheet (2026-07-24): Dodge is a COMBAT skill (it
+    // still uses DEX -- the Combat category is DEX-linked, so the bonus is
+    // identical). It appeared under both lists in the rules; he's fixed the
+    // written rules to Combat. Supersedes errata #7 ('Dexterous').
+    category: 'Combat',
     base: { formula: 'DEXx2' },
     summary: 'Evade incoming attacks, downgrading a successful attack by one step per level of Dodge success (Difficult vs. melee attacks).',
   },

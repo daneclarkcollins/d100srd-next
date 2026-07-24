@@ -1,7 +1,7 @@
 "use client";
 
 import { Character } from '@/lib/character-data';
-import { damageModifier as rulesDamageModifier } from '@/lib/game-data/rules';
+import { damageModifier as rulesDamageModifier, movement } from '@/lib/game-data/rules';
 import { skillCategories as gameSkillCategories } from '@/lib/character-data';
 import { Printer, Save, Edit, Plus, TrendingUp } from 'lucide-react';
 
@@ -113,22 +113,19 @@ export default function CharacterSheet({
         <div className="space-y-4">
           <div className="section-header">CHARACTERISTICS</div>
           
-          {Object.entries({
-            'STR': 'EFFORT',
-            'CON': 'STAMINA', 
-            'SIZ': '',
-            'INT': 'INTELLECT',
-            'ACU': 'SPIRIT',
-            'DEX': 'AGILITY',
-            'SOC': 'CHARM'
-          }).map(([stat, pool]) => (
+          {/* Characteristic Rolls (canon 002 §Characteristic Rolls: each is
+              the characteristic ×5 -- STR Roll, CON Roll, etc.). The old
+              BRP pool names (EFFORT/STAMINA/INTELLECT/SPIRIT/AGILITY/CHARM,
+              stored in derivedStats.effort etc.) were retired by Mike's
+              2026-07-24 Tavern Issues sheet; data fields remain for old rows. */}
+          {(['STR', 'CON', 'SIZ', 'INT', 'ACU', 'DEX', 'SOC'] as const).map((stat) => (
             <div key={stat} className="grid grid-cols-5 gap-2 items-center text-sm">
               <div className="font-bold">{stat}</div>
               <div className="field-box text-center">{characteristics[stat] || ''}</div>
-              <div className="text-center">×5 =</div>
-              <div className="text-right font-bold">{pool}</div>
+              <div className="text-center">{stat !== 'SIZ' ? '×5 =' : ''}</div>
+              <div className="text-right font-bold">{stat !== 'SIZ' ? `${stat} ROLL` : ''}</div>
               <div className="field-box text-center">
-                {pool && derivedStats[pool.toLowerCase()] ? `${derivedStats[pool.toLowerCase()]}%` : ''}
+                {stat !== 'SIZ' && characteristics[stat] ? `${characteristics[stat] * 5}%` : ''}
               </div>
             </div>
           ))}
@@ -153,7 +150,9 @@ export default function CharacterSheet({
                 <div className="border border-gray-400 p-2 bg-gray-100">
                   <div className="text-xs">SPEED</div>
                 </div>
-                <div className="field-box mt-1">{derivedStats.speed || ''}</div>
+                <div className="field-box mt-1">
+                  {characterData.speed || derivedStats.movementSpeed || (characteristics.SIZ ? movement(characteristics.SIZ) : '')}
+                </div>
               </div>
             </div>
 
@@ -268,17 +267,19 @@ export default function CharacterSheet({
               <div className="border border-gray-400 p-2 bg-gray-100 text-xs">
                 CURRENT HORROR RESISTANCE
               </div>
-              <div className="field-box mt-1"></div>
+              {/* Max Horror Resistance = ACU × 5 (canon 002); current starts at max */}
+              <div className="field-box mt-1">{characteristics.ACU ? characteristics.ACU * 5 : ''}</div>
             </div>
             <div className="text-center">
               <div className="border border-gray-400 p-2 bg-gray-100 text-xs">MANA MAX</div>
-              <div className="field-box mt-1"></div>
+              {/* Starting mana = ACU/2 (only used if a mana talent is taken) */}
+              <div className="field-box mt-1">{characteristics.ACU ? Math.floor(characteristics.ACU / 2) : ''}</div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="text-center">
-              <div className="field-box">HR MAX</div>
+              <div className="field-box">HR MAX {characteristics.ACU ? characteristics.ACU * 5 : ''}</div>
               <div className="text-center mt-1">-</div>
             </div>
             <div className="text-center">

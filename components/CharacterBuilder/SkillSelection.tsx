@@ -389,7 +389,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
                       
                       {isAdvancedMode ? (
                         <div className="flex items-center gap-3 text-sm">
-                          <span className="text-slate-400">
+                          <span className="text-slate-200">
                             {base}% + {categoryBonus}%
                           </span>
                           
@@ -439,7 +439,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 text-sm">
-                          <span className="text-slate-400">
+                          <span className="text-slate-200">
                             {base}% + {categoryBonus}%
                           </span>
                           

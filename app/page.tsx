@@ -1,3 +1,4 @@
+import { RULES_SITE_URL } from '@/lib/site-config';
 import Link from "next/link";
 
 export default function Home() {
@@ -19,17 +20,23 @@ export default function Home() {
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link 
-              href="/rules" 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-            >
-              Browse SRD Rules
-            </Link>
-            <Link 
               href="/tools/character-builder" 
-              className="border border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
             >
               Create Character
             </Link>
+            {/* In-app SRD hidden per Mike 2026-07-24 (lib/site-config.ts) —
+                the button below linked href="/rules" ("Browse SRD Rules");
+                restore it when SHOW_SRD flips back on. Rules live at the
+                WordPress site meanwhile. */}
+            <a
+              href={RULES_SITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Rules Site
+            </a>
           </div>
         </div>
 
