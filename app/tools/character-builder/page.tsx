@@ -6,7 +6,8 @@ import { Save, RotateCcw, Printer, ChevronLeft, Dice6, Upload, Download, Users, 
 import { Character, SpeciesChoice, createNewCharacter, biologyToSpeciesName } from '@/lib/character-data';
 import { professionFunds } from '@/lib/character-data';
 import { generateName, isNameSpecies } from '@/lib/name-generator';
-import { rollDice as rollDiceExpr } from '@/lib/game-data/dice';
+import { rollDice as rollDiceExpr, diceRange } from '@/lib/game-data/dice';
+import { SPECIES } from '@/lib/game-data';
 import { POINT_BUY } from '@/lib/game-data/rules';
 import DerivedPreview, { STAT_EFFECTS } from '@/components/CharacterBuilder/DerivedPreview';
 import type { Characteristic } from '@/lib/game-data/types';
@@ -298,24 +299,45 @@ function CharacterBuilderInner() {
     setCharacter({ ...character, name: rolled.name });
   };
 
+  // SIZ is species-determined, never point-bought (canon 002: Elflings/Feral
+  // 1d3+3, Dworvs 2d6+4, Terans/Elves/Fauns/Dwerans 2d6+6, Orogs 1d3+19).
+  // Default is a roll; the player may adjust within the species' dice range.
+  const getSizInfo = () => {
+    // biology covers Teran/Fey paths; Elves store species 'Elven' with no biology
+    const name = biologyToSpeciesName(character.biology) ?? biologyToSpeciesName(character.species);
+    const sp = SPECIES.find((x) => x.name === name);
+    const expr = sp?.sizRoll ?? '2d6+6';
+    let min = 3, max = 18;
+    try { [min, max] = diceRange(expr); } catch { /* keep fallback */ }
+    return { speciesName: name ?? 'species', expr, min, max };
+  };
+
+  const rollSpeciesSiz = (): number => {
+    const { expr } = getSizInfo();
+    try { return rollDiceExpr(expr); } catch { return 10; }
+  };
+
+  const setPointBuySiz = (value: number) => {
+    const { min, max } = getSizInfo();
+    const clamped = Math.min(max, Math.max(min, value));
+    setPointBuyStats(prev => ({ ...prev, SIZ: clamped }));
+  };
+
   const handleCharacteristicRoll = () => {
-    const rollCharacteristic = () => {
-      const rolls = [];
-      for (let i = 0; i < 4; i++) {
-        rolls.push(Math.floor(Math.random() * 6) + 1);
-      }
-      rolls.sort((a, b) => b - a);
-      return rolls.slice(0, 3).reduce((sum, roll) => sum + roll, 0);
-    };
+    // Canon random method (002): 3d6 straight for STR/CON/ACU/DEX/SOC,
+    // INT = 2d6+6, SIZ = the species' own dice. (The old code rolled
+    // 4d6-drop-lowest for everything -- a D&D-ism, not SagaBorn.)
+    const d6 = () => Math.floor(Math.random() * 6) + 1;
+    const roll3d6 = () => d6() + d6() + d6();
 
     const newCharacteristics = {
-      STR: rollCharacteristic(),
-      CON: rollCharacteristic(),
-      SIZ: rollCharacteristic(),
-      INT: rollCharacteristic(),
-      ACU: rollCharacteristic(),
-      DEX: rollCharacteristic(),
-      SOC: rollCharacteristic()
+      STR: roll3d6(),
+      CON: roll3d6(),
+      SIZ: rollSpeciesSiz(),
+      INT: d6() + d6() + 6,
+      ACU: roll3d6(),
+      DEX: roll3d6(),
+      SOC: roll3d6()
     };
 
     // Calculate derived stats
@@ -358,6 +380,7 @@ function CharacterBuilderInner() {
   //  - Lowering below 10 refunds 1 pt (STR/CON/SOC) or 2 pts (DEX/INT/ACU)
   // (The old implementation flat-charged 2 pts for ANY DEX/INT/ACU raise -- wrong.)
   const netPointsSpent = (stat: string, value: number): number => {
+    if (stat === 'SIZ') return 0; // species-rolled, outside the 24-point pool
     const char = stat as Characteristic;
     if (value >= POINT_BUY.startingValue) {
       let spent = 0;
@@ -1016,7 +1039,11 @@ function CharacterBuilderInner() {
                       </div>
                       
                       <div
-                        onClick={() => setCharacteristicMethod('pointbuy')}
+                        onClick={() => {
+                          setCharacteristicMethod('pointbuy');
+                          // SIZ comes from the species dice, rolled on entry
+                          setPointBuyStats(prev => ({ ...prev, SIZ: rollSpeciesSiz() }));
+                        }}
                         className="border border-slate-600 rounded-lg p-4 hover:bg-slate-700 cursor-pointer transition-colors bg-slate-800"
                       >
                         <h3 className="font-bold text-blue-300 mb-2">Point-Buy Method</h3>
@@ -1050,8 +1077,28 @@ function CharacterBuilderInner() {
                           <div className="text-2xl font-bold text-white">{character.characteristics.CON}</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-sm text-slate-400">SIZ</div>
-                          <div className="text-2xl font-bold text-white">{character.characteristics.SIZ}</div>
+                          {(() => { const siz = getSizInfo(); return (
+                            <>
+                              <div className="text-sm text-slate-400">SIZ <span className="text-slate-600">({siz.expr})</span></div>
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => setCharacter({ ...character, characteristics: { ...character.characteristics, SIZ: Math.max(siz.min, character.characteristics.SIZ - 1) } })}
+                                  disabled={character.characteristics.SIZ <= siz.min}
+                                  className="w-6 h-6 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 rounded text-white text-xs"
+                                >
+                                  -
+                                </button>
+                                <div className="text-2xl font-bold text-white">{character.characteristics.SIZ}</div>
+                                <button
+                                  onClick={() => setCharacter({ ...character, characteristics: { ...character.characteristics, SIZ: Math.min(siz.max, character.characteristics.SIZ + 1) } })}
+                                  disabled={character.characteristics.SIZ >= siz.max}
+                                  className="w-6 h-6 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 rounded text-white text-xs"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </>
+                          ); })()}
                         </div>
                         <div className="text-center">
                           <div className="text-sm text-slate-400">INT</div>
@@ -1118,9 +1165,50 @@ function CharacterBuilderInner() {
                         </p>
                       )}
                     </div>
-                    
+
+                    {!isAdvancedMode && (() => {
+                      const siz = getSizInfo();
+                      return (
+                        <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-800 border border-slate-600/60 p-4 rounded mb-4">
+                          <div className="min-w-0">
+                            <span className="text-white font-semibold">SIZ</span>
+                            <span className="text-amber-300/90 text-sm ml-2">
+                              rolled from your species — {siz.speciesName}: {siz.expr} (range {siz.min}–{siz.max}), not point-bought
+                            </span>
+                            <div className="text-[11px] text-slate-500">hit points • damage modifier • movement</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setPointBuySiz(pointBuyStats.SIZ - 1)}
+                              disabled={pointBuyStats.SIZ <= siz.min}
+                              className="w-8 h-8 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500"
+                            >
+                              -
+                            </button>
+                            <span className="text-2xl font-bold text-white w-8 text-center">{pointBuyStats.SIZ}</span>
+                            <button
+                              onClick={() => setPointBuySiz(pointBuyStats.SIZ + 1)}
+                              disabled={pointBuyStats.SIZ >= siz.max}
+                              className="w-8 h-8 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-slate-700 disabled:text-slate-500"
+                            >
+                              +
+                            </button>
+                            <button
+                              onClick={() => setPointBuySiz(rollSpeciesSiz())}
+                              className="ml-2 px-3 h-8 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded"
+                              title={`Roll ${siz.expr}`}
+                            >
+                              Reroll
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      {Object.entries(pointBuyStats).map(([stat, value]) => (
+                      {Object.entries(pointBuyStats)
+                        .filter(([stat]) => isAdvancedMode || stat !== 'SIZ')
+                        .map(([stat, value]) => (
                         <div key={stat} className="flex items-center justify-between bg-slate-800 p-4 rounded">
                           <div className="flex items-center gap-4 min-w-0">
                             <div className="min-w-0">
