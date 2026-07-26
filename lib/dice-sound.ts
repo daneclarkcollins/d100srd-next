@@ -37,10 +37,12 @@ export function playDiceSound(): void {
     if (ctx.state === 'suspended') void ctx.resume();
 
     const now = ctx.currentTime;
-    const clicks = 6 + Math.floor(Math.random() * 3);
+    // A slower, longer tumble: clicks start quick, then the gaps stretch as
+    // the dice settle (~0.8s total), with an exponential volume taper.
+    const clicks = 8 + Math.floor(Math.random() * 3);
+    let t = now + 0.01;
     for (let i = 0; i < clicks; i++) {
-      const t = now + i * 0.038 + Math.random() * 0.022;
-      const dur = 0.018 + Math.random() * 0.02;
+      const dur = 0.02 + Math.random() * 0.025;
 
       const frames = Math.max(1, Math.ceil(ctx.sampleRate * dur));
       const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
@@ -54,17 +56,20 @@ export function playDiceSound(): void {
 
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.value = 1600 + Math.random() * 2600; // plasticky click range
+      filter.frequency.value = 1400 + Math.random() * 2400; // plasticky click range
       filter.Q.value = 1.4;
 
       const gain = ctx.createGain();
-      // Later clicks fade, like dice settling
-      gain.gain.value = (0.22 + Math.random() * 0.18) * (1 - i / (clicks + 2));
+      // Exponential fade — late clicks are the dice barely rocking to rest
+      gain.gain.value = (0.24 + Math.random() * 0.16) * Math.pow(0.8, i);
 
       src.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
       src.start(t);
+
+      // Gaps widen as the tumble loses energy (decelerating rhythm)
+      t += (0.05 + Math.random() * 0.02) * Math.pow(1.22, i);
     }
   } catch { /* audio unavailable — silently skip */ }
 }
