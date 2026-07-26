@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { playDiceSound } from '@/lib/dice-sound'
 import { Dice6 } from 'lucide-react'
 
 interface DiceRollerProps {
@@ -14,6 +15,7 @@ export default function DiceRoller({ dice = '1d20', label = 'Roll', modifier = 0
   const [rolls, setRolls] = useState<number[]>([])
   
   const rollDice = () => {
+    playDiceSound()
     const [count, sides] = dice.toLowerCase().split('d').map(Number)
     const newRolls = Array.from({ length: count }, () => 
       Math.floor(Math.random() * sides) + 1

@@ -19,6 +19,7 @@ import {
 import { CREATURES, CREATURE_TIERS, CONDITIONS } from '@/lib/game-data';
 import type { CreatureStatBlock } from '@/lib/game-data';
 import { useCharacterContext } from '@/contexts/CharacterContext';
+import { playDiceSound } from '@/lib/dice-sound';
 
 // Shared with the Encounter Builder's "Run in Combat Tracker" handoff —
 // keep the literal in sync there (page files can't export extra symbols).
@@ -179,6 +180,7 @@ export default function CombatTrackerPage() {
   };
 
   const rollAllInitiative = () => {
+    playDiceSound();
     setCombatants((prev) => prev.map((c) => ({ ...c, initiative: d10() + (c.dex ?? 0) })));
     setRound(1);
     setActiveId(null);
@@ -378,7 +380,7 @@ export default function CombatTrackerPage() {
                       title={`Initiative (DEX ${c.dex ?? '?'} + 1d10)`}
                     />
                     <button
-                      onClick={() => patch(c.id, { initiative: d10() + (c.dex ?? 0) })}
+                      onClick={() => { playDiceSound(); patch(c.id, { initiative: d10() + (c.dex ?? 0) }); }}
                       className="text-slate-500 hover:text-white"
                       title={c.dex !== null ? `Roll 1d10 + ${c.dex}` : 'Roll 1d10 (no DEX known)'}
                     >

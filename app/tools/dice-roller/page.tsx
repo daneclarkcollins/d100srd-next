@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { playDiceSound, diceSoundEnabled, setDiceSoundEnabled } from '@/lib/dice-sound'
 import { useCharacterContext } from '@/contexts/CharacterContext'
 import { 
   Dice1, 
@@ -38,6 +39,12 @@ interface RollResult {
 export default function DiceRollerPage() {
   const { activeCharacter } = useCharacterContext()
   const [rollHistory, setRollHistory] = useState<RollResult[]>([])
+  const [soundOn, setSoundOn] = useState(true)
+  useEffect(() => { setSoundOn(diceSoundEnabled()) }, [])
+  const toggleSound = () => {
+    setDiceSoundEnabled(!soundOn)
+    setSoundOn(!soundOn)
+  }
   const [customRoll, setCustomRoll] = useState('')
   const [selectedSkill, setSelectedSkill] = useState('')
   const [selectedCharacteristic, setSelectedCharacteristic] = useState('')
@@ -77,6 +84,7 @@ export default function DiceRollerPage() {
 
   // Animate dice roll
   const animateRoll = async () => {
+    playDiceSound()
     setAnimating(true)
     await new Promise(resolve => setTimeout(resolve, 600))
     setAnimating(false)
@@ -224,7 +232,16 @@ export default function DiceRollerPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">SagaBorn Dice Roller</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">
+            SagaBorn Dice Roller
+            <button
+              onClick={toggleSound}
+              className="ml-3 align-middle text-2xl"
+              title={soundOn ? 'Dice sound on — click to mute' : 'Dice sound muted — click to unmute'}
+            >
+              {soundOn ? '🔊' : '🔇'}
+            </button>
+          </h1>
           <p className="text-xl text-slate-400">
             Professional dice roller with character integration
           </p>
