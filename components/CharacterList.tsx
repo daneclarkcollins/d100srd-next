@@ -139,7 +139,9 @@ export default function CharacterList({ onLoadCharacter, onCreateNew, refreshTri
         </h3>
       </div>
 
-      {loading && (
+      {/* Only show the loader before the FIRST load — background refetches
+          (e.g. right after saving) kept collapsing/expanding this panel. */}
+      {loading && characters.length === 0 && (
         <div className="text-center py-4">
           <div className="text-slate-400">Loading characters...</div>
         </div>
@@ -166,7 +168,7 @@ export default function CharacterList({ onLoadCharacter, onCreateNew, refreshTri
         </div>
       )}
 
-      {!loading && characters.length > 0 && (
+      {characters.length > 0 && (
         <div className="space-y-3">
           {characters.map((char) => (
             <div

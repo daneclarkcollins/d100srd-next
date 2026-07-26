@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Tools - SagaBorn D100 SRD',
-  description: 'Interactive tools and utilities for SagaBorn D100 players and game masters.',
+  title: 'Tools — SagaBorn Tavern',
+  description: 'Interactive tools and utilities for SagaBorn players and StoryGuides.',
 };
 
 export default function ToolsPage() {

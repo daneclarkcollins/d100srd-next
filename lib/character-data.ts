@@ -265,6 +265,37 @@ export const professionSkills: Record<string, string[]> = Object.fromEntries(
   PROFESSIONS.map((p) => [p.name, p.skills.map(grantDisplay)])
 );
 
+/** Raw skill grants per profession — the builder resolves choices from these. */
+export const professionSkillGrants: Record<string, SkillGrant[]> = Object.fromEntries(
+  PROFESSIONS.map((p) => [p.name, p.skills])
+);
+
+/** Skill-row options for each choice group (e.g. melee-weapon → the four weapon classes). */
+export const skillGroupOptions: Record<string, string[]> = {
+  'melee-weapon': SKILLS.filter((sk) => sk.groups?.includes('melee-weapon')).map((sk) => displaySkillName(sk.name)),
+  'missile-weapon': SKILLS.filter((sk) => sk.groups?.includes('missile-weapon')).map((sk) => displaySkillName(sk.name)),
+};
+
+/**
+ * Resolve a grant to the allocatable skill-row name, or null when the player
+ * must choose (choiceOfGroup / choiceOf). Specialty grants — fixed like
+ * Knowledge (Arcana) or open like Craft (Any) — resolve to their base row;
+ * the specialty is written on the sheet.
+ */
+export function grantRowName(g: SkillGrant): string | null {
+  if ('choiceOfGroup' in g || 'choiceOf' in g) return null;
+  return displaySkillName(g.skill);
+}
+
+/** Human label for a choice grant (for the builder's chooser UI). */
+export function grantChoiceLabel(g: SkillGrant): string {
+  if ('choiceOfGroup' in g) {
+    return g.choiceOfGroup === 'melee-weapon' ? 'Melee Weapon Skill (Any)' : 'Missile Weapon Skill (Any)';
+  }
+  if ('choiceOf' in g) return `Choice of ${g.choiceOf.join(' or ')}`;
+  return grantDisplay(g);
+}
+
 export const professionTable: SpeciesChoice[] = [...PROFESSIONS]
   .filter((p) => p.d100)
   .sort((a, b) => a.d100![0] - b.d100![0])

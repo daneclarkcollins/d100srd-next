@@ -237,12 +237,15 @@ export const SKILLS: Skill[] = [
     base: 10,
     summary: 'Find the way to a destination using compass, charts, stars, or memory and intuition.',
   },
-  {
-    name: 'Parry',
-    category: 'Combat',
-    base: 'per-item', // errata #12: Parry is a skill that uses the weapon being wielded
-    summary: 'Block an incoming attack with a wielded weapon or shield (cumulative -30% per parry after the first; Difficult vs. missiles unless using a shield).',
-  },
+  // Parry REMOVED per Mike's Tavern Issues sheet (2026-07-25): "Parry skill
+  // rating is the weapon skill being used" — it isn't its own skill. Kept
+  // here commented for easy restoration if the ruling changes.
+  // {
+  //   name: 'Parry',
+  //   category: 'Combat',
+  //   base: 'per-item', // errata #12: Parry is a skill that uses the weapon being wielded
+  //   summary: 'Block an incoming attack with a wielded weapon or shield (cumulative -30% per parry after the first; Difficult vs. missiles unless using a shield).',
+  // },
   {
     name: 'Perform (various)',
     category: 'Communication',

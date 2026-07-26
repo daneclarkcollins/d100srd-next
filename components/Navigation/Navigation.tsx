@@ -40,7 +40,8 @@ export default function Navigation() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link href={user ? "/dashboard" : "/"} className="text-xl font-bold text-white">
-            SagaBorn <span className="text-blue-400">D100</span>
+            {/* Rebrand per Mike 2026-07-25: name is "SagaBorn Tavern" (logo/design files to come) */}
+            SagaBorn <span className="text-blue-400">Tavern</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">

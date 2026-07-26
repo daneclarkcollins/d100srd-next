@@ -7,9 +7,9 @@ export default function Home() {
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-6xl font-bold text-white mb-4">
-            SagaBorn <span className="text-blue-400">D100</span>
+            SagaBorn <span className="text-blue-400">Tavern</span>
           </h1>
-          <h2 className="text-2xl text-blue-300 mb-6">System Reference Document</h2>
+          <h2 className="text-2xl text-blue-300 mb-6">Character creation & game tools for the SagaBorn D100 RPG</h2>
           <p className="text-xl text-slate-300 mb-4 max-w-3xl mx-auto">
             A streamlined fantasy roleplaying system based on Chaosium's Basic Roleplaying (BRP) ruleset, 
             reimagined for fast-paced, narrative-driven adventures in the dark fantasy world of the Dark Return.

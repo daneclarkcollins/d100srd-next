@@ -104,7 +104,7 @@ export default function CharacterSheet({
           </div>
         </div>
         <div className="flex items-center gap-4 print:hidden">
-          <span className="text-2xl font-bold text-gray-800">SagaBorn <span className="text-blue-700">D100</span></span>
+          <span className="text-2xl font-bold text-gray-800">SagaBorn <span className="text-blue-700">Tavern</span></span>
         </div>
       </div>
 

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Character, skillCategories, skillBaseChances, professionSkills, getSkillBase } from '@/lib/character-data';
+import {
+  Character, skillCategories, skillBaseChances, getSkillBase,
+  professionSkillGrants, skillGroupOptions, grantRowName, grantChoiceLabel,
+} from '@/lib/character-data';
+import type { SkillGrant } from '@/lib/game-data/types';
 
 interface SkillSelectionProps {
   character: Character;
@@ -30,18 +34,47 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
   const professionalSpent = Object.values(allocation.professional).reduce((sum, val) => sum + val, 0);
   const personalSpent = Object.values(allocation.personal).reduce((sum, val) => sum + val, 0);
 
-  // Get profession skills
-  const characterProfessionSkills = character.profession ? (professionSkills[character.profession] || []) : [];
+  // Profession skill grants: fixed grants resolve straight to skill rows
+  // (Knowledge (Arcana) → the Knowledge row); choice grants (e.g. "Melee
+  // Weapon Skill (Any)" on 13 professions) need the player to pick first.
+  const grants: SkillGrant[] = character.profession ? (professionSkillGrants[character.profession] ?? []) : [];
+  const choiceGrants = grants
+    .map((g, i) => ({ g, i }))
+    .filter(({ g }) => 'choiceOfGroup' in g || 'choiceOf' in g);
+  const [grantChoices, setGrantChoices] = useState<Record<number, string>>(() => {
+    // If the character already has points in one of the options (edit flow),
+    // treat that as the earlier pick.
+    const initial: Record<number, string> = {};
+    for (const { g, i } of grants.map((g, i) => ({ g, i }))) {
+      if (!('choiceOfGroup' in g) && !('choiceOf' in g)) continue;
+      const opts = 'choiceOfGroup' in g ? (skillGroupOptions[g.choiceOfGroup] ?? []) : g.choiceOf;
+      const existing = opts.find((o) => (character.skills?.[o] ?? 0) > 0);
+      if (existing) initial[i] = existing;
+    }
+    return initial;
+  });
+
+  const characterProfessionSkills = [
+    ...grants.map(grantRowName).filter((n): n is string => n !== null),
+    ...Object.values(grantChoices),
+  ];
+  const unresolvedChoices = choiceGrants.filter(({ i }) => !grantChoices[i]);
+
+  // Canon 003 §Skill Specialties: general Knowledge levels only to 40, then
+  // splits into Expertise specialties that build on it. Everything else caps
+  // at 75 during creation.
+  function creationCap(skill: string): number {
+    return skill === 'Knowledge' ? 40 : 75;
+  }
 
   function getCategoryBonus(category: string): number {
     const categoryData = (skillCategories as any)[category];
     if (!categoryData) return 0;
     
     const char = character.characteristics?.[categoryData.characteristic as keyof typeof character.characteristics] || 10;
-    
-    if (char >= 16) return 10;
-    if (char >= 13) return 5;
-    return 0;
+
+    // Canon (errata): category bonus = linked characteristic / 2, rounded up
+    return Math.ceil(char / 2);
   }
 
   function getSkillCategory(skill: string): string {
@@ -71,7 +104,7 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
       const cap = hasSkillAbove90 ? 90 : 95;
       return Math.min(cap, base + categoryBonus + professionalAlloc + personalAlloc);
     } else {
-      return Math.min(75, base + categoryBonus + professionalAlloc + personalAlloc);
+      return Math.min(creationCap(skill), base + categoryBonus + professionalAlloc + personalAlloc);
     }
   }
 
@@ -83,14 +116,14 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
     const currentTotal = base + categoryBonus + professionalAlloc + personalAlloc;
     
     // Determine the cap
-    let cap = 75; // Default for normal mode
+    let cap = creationCap(skill); // 75 normally; Knowledge 40
     if (isAdvancedMode) {
       const hasSkillAbove90 = Object.keys({ ...skillBaseChances }).some(otherSkill => {
         if (otherSkill === skill) return false;
         const otherTotal = calculateTotal(otherSkill);
         return otherTotal >= 91;
       });
-      cap = hasSkillAbove90 ? 90 : 95;
+      cap = skill === 'Knowledge' ? 40 : (hasSkillAbove90 ? 90 : 95);
     }
     
     const cappedTotal = Math.min(cap, currentTotal);
@@ -143,8 +176,8 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
     
     // Check if the new total would exceed 75% or wouldn't actually increase the skill
     const currentTotal = calculateTotal(skill);
-    if (newTotal > 75) {
-      const maxAllowedValue = 75 - base - categoryBonus - otherModeAlloc;
+    if (newTotal > creationCap(skill)) {
+      const maxAllowedValue = creationCap(skill) - base - categoryBonus - otherModeAlloc;
       const adjustedValue = Math.max(currentValue, Math.min(newValue, maxAllowedValue));
       if (adjustedValue <= currentValue) return; // Can't improve this skill further
       currentAllocation[currentMode][skill] = adjustedValue;
@@ -181,9 +214,9 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
       const base = getSkillBase(skill, character.characteristics);
       const categoryBonus = getCategoryBonus(getSkillCategory(skill));
       const currentTotal = calculateTotal(skill);
-      const maxPossible = 75 - base - categoryBonus;
+      const maxPossible = creationCap(skill) - base - categoryBonus;
       
-      if (maxPossible <= 0 || currentTotal >= 75) return; // Already at or above max
+      if (maxPossible <= 0 || currentTotal >= creationCap(skill)) return; // Already at or above max
       
       // Check if professional skill is allowed for the current mode
       if (mode === 'professional' && !characterProfessionSkills.includes(skill)) return;
@@ -337,6 +370,47 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
           </div>
         )}
 
+        {/* Profession choice grants — e.g. "Melee Weapon Skill (Any)": pick
+            the weapon class, then it becomes allocatable below (Mike/Dane
+            2026-07-25). */}
+        {!isAdvancedMode && choiceGrants.length > 0 && (
+          <div className={`border rounded-lg p-4 mb-6 ${unresolvedChoices.length > 0 ? 'bg-amber-950/40 border-amber-700' : 'bg-slate-800/60 border-slate-700'}`}>
+            <h3 className="text-white font-semibold mb-1">
+              Your profession includes a choice
+            </h3>
+            <p className="text-sm text-slate-300 mb-3">
+              {character.profession} grants{' '}
+              {choiceGrants.map(({ g }) => `“${grantChoiceLabel(g)}”`).join(' and ')} — pick below and
+              the chosen skill joins your professional skill list.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {choiceGrants.map(({ g, i }) => {
+                const options = 'choiceOfGroup' in g ? (skillGroupOptions[g.choiceOfGroup] ?? []) : ('choiceOf' in g ? g.choiceOf : []);
+                return (
+                  <label key={i} className="flex items-center gap-2 text-sm text-slate-300">
+                    {grantChoiceLabel(g)}:
+                    <select
+                      value={grantChoices[i] ?? ''}
+                      onChange={(e) => setGrantChoices((prev) => ({ ...prev, [i]: e.target.value }))}
+                      className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-white"
+                    >
+                      <option value="">Choose…</option>
+                      {options.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })}
+            </div>
+            {unresolvedChoices.length > 0 && mode === 'professional' && (
+              <p className="text-xs text-amber-300 mt-2">
+                Until you choose, that skill can&apos;t receive professional points.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="space-y-6">
           {Object.entries(skillsByCategory).map(([category, skills]) => {
             // In advanced mode, show all skills. Otherwise, follow normal professional/personal mode logic
@@ -473,21 +547,21 @@ export default function SkillSelection({ character, onComplete, onBack, isAdvanc
                             
                             <button
                               onClick={() => adjustSkillPoints(skill, 1)}
-                              disabled={isDisabled || total >= 75}
+                              disabled={isDisabled || total >= creationCap(skill)}
                               className="w-6 h-6 bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed rounded text-white text-xs"
                             >
                               +1
                             </button>
                             <button
                               onClick={() => adjustSkillPoints(skill, 5)}
-                              disabled={isDisabled || total >= 75}
+                              disabled={isDisabled || total >= creationCap(skill)}
                               className="w-8 h-6 bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed rounded text-white text-xs"
                             >
                               +5
                             </button>
                             <button
                               onClick={() => maxOutSkill(skill)}
-                              disabled={isDisabled || total >= 75}
+                              disabled={isDisabled || total >= creationCap(skill)}
                               className="w-10 h-6 bg-purple-700 hover:bg-purple-600 disabled:opacity-30 disabled:cursor-not-allowed rounded text-white text-xs"
                             >
                               Max

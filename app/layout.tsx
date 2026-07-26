@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SagaBorn D100 SRD",
-  description: "The official System Reference Document for SagaBorn D100 - A fantasy tabletop RPG system combining classic d100 mechanics with modern storytelling.",
+  title: "SagaBorn Tavern",
+  description: "SagaBorn Tavern — character creation and game tools for the SagaBorn D100 tabletop RPG. Build heroes, run encounters, and level up, D&D-Beyond style.",
   keywords: ["SagaBorn", "D100", "RPG", "tabletop", "fantasy", "roleplaying", "game"],
   authors: [{ name: "SagaBorn RPG" }],
 };
