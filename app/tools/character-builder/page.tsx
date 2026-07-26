@@ -7,6 +7,8 @@ import { Character, SpeciesChoice, createNewCharacter, biologyToSpeciesName } fr
 import { professionFunds } from '@/lib/character-data';
 import { generateName, isNameSpecies } from '@/lib/name-generator';
 import { rollDice as rollDiceExpr } from '@/lib/game-data/dice';
+import { POINT_BUY } from '@/lib/game-data/rules';
+import type { Characteristic } from '@/lib/game-data/types';
 import SpeciesSelection from '@/components/CharacterBuilder/SpeciesSelection';
 import SkillSelection from '@/components/CharacterBuilder/SkillSelection';
 import CharacterList from '@/components/CharacterList';
@@ -349,31 +351,30 @@ function CharacterBuilderInner() {
     setCharacter({ ...character, currentStep: 'skills' });
   };
 
-  const getPointCost = (stat: string, currentValue: number, newValue: number): number => {
-    const expensiveStats = ['DEX', 'INT', 'ACU'];
-    const isExpensive = expensiveStats.includes(stat);
-    const costPerPoint = isExpensive ? 2 : 1;
-    return Math.abs(newValue - currentValue) * costPerPoint;
+  // Canon point-buy costs (002 / lib/game-data/rules POINT_BUY):
+  //  - STR/CON/SOC: 1 pt per point up to 15, 2 pts each for 16-19
+  //  - DEX/INT/ACU: 1 pt per point up to 13, 3 pts each for 14-16, 4 pts for 17-19
+  //  - Lowering below 10 refunds 1 pt (STR/CON/SOC) or 2 pts (DEX/INT/ACU)
+  // (The old implementation flat-charged 2 pts for ANY DEX/INT/ACU raise -- wrong.)
+  const netPointsSpent = (stat: string, value: number): number => {
+    const char = stat as Characteristic;
+    if (value >= POINT_BUY.startingValue) {
+      let spent = 0;
+      for (let v = POINT_BUY.startingValue; v < value; v++) spent += POINT_BUY.cost(char, v);
+      return spent;
+    }
+    // below 10: refund per point lowered (negative spend)
+    return -(POINT_BUY.startingValue - value) * POINT_BUY.refund(char);
   };
 
-  const canAffordStatChange = (stat: string, currentValue: number, newValue: number): boolean => {
-    if (newValue < 8 || newValue > 19) return false;
-    const cost = getPointCost(stat, currentValue, newValue);
-    
-    // Calculate current points spent to get accurate available points
-    let totalSpent = 0;
-    Object.entries(pointBuyStats).forEach(([statName, statValue]) => {
-      if (statName === stat) {
-        // Use the new value for the stat we're changing
-        totalSpent += getPointCost(statName, 10, newValue);
-      } else {
-        // Use current value for other stats
-        totalSpent += getPointCost(statName, 10, statValue);
-      }
-    });
-    
-    const actualAvailablePoints = 24 - totalSpent;
-    return actualAvailablePoints >= 0;
+  const totalPointsSpent = (stats: Record<string, number>): number =>
+    Object.entries(stats).reduce((sum, [statName, statValue]) => sum + netPointsSpent(statName, statValue), 0);
+
+  const canAffordStatChange = (stat: string, _currentValue: number, newValue: number): boolean => {
+    if (newValue > 19) return false;
+    if (newValue < POINT_BUY.floor(stat as Characteristic)) return false;
+    const totalSpent = totalPointsSpent({ ...pointBuyStats, [stat]: newValue });
+    return POINT_BUY.points - totalSpent >= 0;
   };
 
   const handlePointBuyChange = (stat: string, newValue: number) => {
@@ -382,17 +383,13 @@ function CharacterBuilderInner() {
       setPointBuyStats(prev => ({ ...prev, [stat]: Math.max(0, newValue) }));
       return;
     }
-    
-    // In normal mode, cap characteristics at 19
-    if (newValue > 19) return;
-    
+
     if (!canAffordStatChange(stat, pointBuyStats[stat as keyof typeof pointBuyStats], newValue)) return;
-    
-    const currentValue = pointBuyStats[stat as keyof typeof pointBuyStats];
-    const cost = getPointCost(stat, currentValue, newValue);
-    
-    setPointBuyStats(prev => ({ ...prev, [stat]: newValue }));
-    setAvailablePoints(prev => newValue > currentValue ? prev - cost : prev + cost);
+
+    const nextStats = { ...pointBuyStats, [stat]: newValue };
+    setPointBuyStats(nextStats);
+    // Recompute absolutely (incremental +/- drifted when bands changed)
+    setAvailablePoints(POINT_BUY.points - totalPointsSpent(nextStats));
   };
 
   const confirmPointBuy = () => {
@@ -1025,7 +1022,7 @@ function CharacterBuilderInner() {
                         <p className="text-slate-300 text-sm mb-2">
                           {isAdvancedMode
                             ? 'Manually set each characteristic to any value. No point limits.'
-                            : 'Start with all stats at 10. Spend 24 points to raise characteristics. DEX, INT, and ACU cost more.'
+                            : 'Start with all stats at 10. Spend 24 points to raise characteristics — costs climb in the upper bands, and DEX/INT/ACU get expensive past 13.'
                           }
                         </p>
                         <p className="text-green-300 text-sm">
@@ -1114,7 +1111,7 @@ function CharacterBuilderInner() {
                       {!isAdvancedMode && (
                         <p className="text-blue-300 text-sm mb-4">
                           Points Remaining: <span className="font-bold text-xl">{availablePoints}</span> 
-                          <span className="text-slate-400 ml-2">(STR, CON, SIZ, SOC cost 1 point each. DEX, INT, ACU cost 2 points each)</span>
+                          <span className="text-slate-400 ml-2">(STR/CON/SOC: 1 pt each to 15, then 2. DEX/INT/ACU: 1 pt each to 13, then 3 for 14–16 and 4 for 17–19. Lowering below 10 refunds points.)</span>
                         </p>
                       )}
                     </div>
@@ -1124,9 +1121,9 @@ function CharacterBuilderInner() {
                         <div key={stat} className="flex items-center justify-between bg-slate-800 p-4 rounded">
                           <div className="flex items-center gap-4">
                             <span className="text-white font-semibold w-8">{stat}</span>
-                            {!isAdvancedMode && (
+                            {!isAdvancedMode && value < 19 && (
                               <span className="text-slate-400 text-sm">
-                                {['DEX', 'INT', 'ACU'].includes(stat) ? '(2 pts)' : '(1 pt)'}
+                                (next +1: {POINT_BUY.cost(stat as Characteristic, value)} pt{POINT_BUY.cost(stat as Characteristic, value) > 1 ? 's' : ''})
                               </span>
                             )}
                           </div>

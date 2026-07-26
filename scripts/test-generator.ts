@@ -6,7 +6,7 @@
 import { generateCharacter } from '../lib/character-generator';
 import { generateName, generateNames, NAME_SPECIES, makeRng as nameRng } from '../lib/name-generator';
 import { SPECIES, PROFESSIONS } from '../lib/game-data';
-import { CREATION_SKILL_CAP } from '../lib/game-data/rules';
+import { CREATION_SKILL_CAP, POINT_BUY } from '../lib/game-data/rules';
 
 let failures = 0;
 const fail = (seed: number, msg: string) => {
@@ -78,6 +78,26 @@ for (let i = 0; i < 2000; i++) {
 }
 const missing = PROFESSIONS.filter((p) => !seen.has(p.name)).map((p) => p.name);
 if (missing.length > 3) { failures++; console.error(`  ✗ professions never rolled in 2000 tries: ${missing.join(', ')}`); }
+
+// --- point-buy costs (002; Dane's bug report 2026-07-24: builder was flat-charging 2/pt for INT/ACU) ---
+{
+  const spend = (char: any, to: number) => {
+    let c = 0;
+    for (let v = 10; v < to; v++) c += POINT_BUY.cost(char, v);
+    return c;
+  };
+  if (POINT_BUY.cost('INT', 10) !== 1) { failures++; console.error('  ✗ INT 10→11 costs 1'); }
+  if (POINT_BUY.cost('ACU', 12) !== 1) { failures++; console.error('  ✗ ACU 12→13 costs 1'); }
+  if (POINT_BUY.cost('DEX', 13) !== 3) { failures++; console.error('  ✗ DEX 13→14 costs 3'); }
+  if (POINT_BUY.cost('INT', 16) !== 4) { failures++; console.error('  ✗ INT 16→17 costs 4'); }
+  if (POINT_BUY.cost('STR', 14) !== 1) { failures++; console.error('  ✗ STR 14→15 costs 1'); }
+  if (POINT_BUY.cost('STR', 15) !== 2) { failures++; console.error('  ✗ STR 15→16 costs 2'); }
+  if (spend('INT', 13) !== 3) { failures++; console.error('  ✗ INT 10→13 totals 3'); }
+  if (spend('INT', 16) !== 12) { failures++; console.error('  ✗ INT 10→16 totals 12'); }
+  if (spend('INT', 19) !== 24) { failures++; console.error('  ✗ INT 10→19 totals 24 (the whole pool)'); }
+  if (spend('SOC', 19) !== 13) { failures++; console.error('  ✗ SOC 10→19 totals 13'); }
+  if (POINT_BUY.refund('ACU') !== 2 || POINT_BUY.refund('CON') !== 1) { failures++; console.error('  ✗ refunds 2 (DEX/INT/ACU) / 1 (others)'); }
+}
 
 // --- name generator ---------------------------------------------------------
 {
