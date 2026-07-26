@@ -8,6 +8,7 @@ import { professionFunds } from '@/lib/character-data';
 import { generateName, isNameSpecies } from '@/lib/name-generator';
 import { rollDice as rollDiceExpr } from '@/lib/game-data/dice';
 import { POINT_BUY } from '@/lib/game-data/rules';
+import DerivedPreview, { STAT_EFFECTS } from '@/components/CharacterBuilder/DerivedPreview';
 import type { Characteristic } from '@/lib/game-data/types';
 import SpeciesSelection from '@/components/CharacterBuilder/SpeciesSelection';
 import SkillSelection from '@/components/CharacterBuilder/SkillSelection';
@@ -1069,6 +1070,8 @@ function CharacterBuilderInner() {
                           <div className="text-2xl font-bold text-white">{character.characteristics.SOC}</div>
                         </div>
                       </div>
+                      <DerivedPreview stats={character.characteristics} />
+
                       <div className="flex gap-4">
                         <button
                           onClick={() => {
@@ -1119,13 +1122,20 @@ function CharacterBuilderInner() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       {Object.entries(pointBuyStats).map(([stat, value]) => (
                         <div key={stat} className="flex items-center justify-between bg-slate-800 p-4 rounded">
-                          <div className="flex items-center gap-4">
-                            <span className="text-white font-semibold w-8">{stat}</span>
-                            {!isAdvancedMode && value < 19 && (
-                              <span className="text-slate-400 text-sm">
-                                (next +1: {POINT_BUY.cost(stat as Characteristic, value)} pt{POINT_BUY.cost(stat as Characteristic, value) > 1 ? 's' : ''})
-                              </span>
-                            )}
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="min-w-0">
+                              <span className="text-white font-semibold">{stat}</span>
+                              {!isAdvancedMode && value < 19 && (
+                                <span className="text-slate-400 text-sm ml-2">
+                                  (next +1: {POINT_BUY.cost(stat as Characteristic, value)} pt{POINT_BUY.cost(stat as Characteristic, value) > 1 ? 's' : ''})
+                                </span>
+                              )}
+                              {STAT_EFFECTS[stat] && (
+                                <div className="text-[11px] text-slate-500 truncate" title={STAT_EFFECTS[stat]}>
+                                  {STAT_EFFECTS[stat]}
+                                </div>
+                              )}
+                            </div>
                           </div>
                           <div className="flex items-center gap-2">
                             {isAdvancedMode ? (
@@ -1162,7 +1172,9 @@ function CharacterBuilderInner() {
                       ))}
                     </div>
                     
-                    <div className="flex gap-4">
+                    <DerivedPreview stats={pointBuyStats} />
+
+                    <div className="flex gap-4 mt-6">
                       <button
                         onClick={() => {
                           setCharacteristicMethod(null);
