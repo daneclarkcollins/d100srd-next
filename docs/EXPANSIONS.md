@@ -112,21 +112,31 @@ battle).
 4. **Starborn** — when content arrives (likely adds species/gear/creatures —
    the content shape already supports it).
 
-## Open questions (blocking items marked ⚑)
+## Decisions (Dane, 2026-07-25/26)
 
-1. ⚑ Kai pool lifecycle: fixed at ACU×2, or does it grow (+2 per level-up
-   like mana)? Cap? How does Kai regenerate (rest, meditation)?
-2. ⚑ Lifepath access: the profession d100 chart tiles exactly 1–100 and the
-   archetype roll is 1d10 (W 1–5, E 6–9, M 10). Are Kai professions/
-   archetypes choice-only, or does Mike want expansion roll tables?
-3. ⚑ Profession table fields: Weapon Master / Martial Artist / Ninja need
-   funds dice, starting equipment, contacts, rarity, suggested archetype.
-4. Can a Kai archetype also take mana talents (two pools), or are they
-   mutually exclusive?
-5. Weapon Master's "single weapon type": do options include Throw, or just
-   the four melee classes + Ranged Weapons?
-6. What happens to a character whose expansion is later disabled/refunded —
-   lock it, warn, or grandfather it?
-7. Kai on the PRINTED sheet (Mana Max box label).
-8. Starborn scope: new species? vehicles? psionics? (Content later, but the
-   answer affects how generic the content shape must be.)
+1. Kai pool: **fixed at ACU×2**, no level-up growth (playtested). Regen
+   proposal (rest, meditation substitutes for sleep) awaiting Mike.
+2. Lifepath access: **choice-only** — Kai content never appears on the d100
+   profession chart or the 1d10 archetype roll.
+3. Profession fields: funds = Assassin's (1d4×10+10 gp) for all three;
+   rarity Very Rare (display-only); equipment/contacts drafted by us for
+   Mike's review. Pairings: Weapon Master→Kai Weapon Dancer, Martial
+   Artist→Kai Warrior, Ninja→Ninja. Names may change.
+4. **Pools are exclusive** — Kai or mana, never both.
+5. Throw ruling (pending Mike's confirm, noted in the draft): Throw = throwing
+   things; thrown WEAPONS (shuriken etc.) fall under Ranged Weapons. Weapon
+   choice groups therefore exclude Throw.
+6. Disabled expansion → existing characters **grandfathered with a warning
+   banner**.
+7. ⚑ Still open: Kai regen confirm; printed-sheet Kai label; Starborn scope.
+8. ⚑ Kai rules must land in the Drive Docs (currently website-only) so the
+   canonical pipeline covers them — flagged to Mike in the draft.
+
+## Content draft
+
+Full writeup (professions with equipment/contacts, archetypes, printed Kai
+Warrior tree + proposed NEW trees: 8 Kai Warrior additions, 11-talent Kai
+Weapon Dancer, 11-talent Ninja) is in Drive for Mike's review:
+"Kai Disciplines — Expansion Draft (for Mike's review)" in the D100 SagaBorn
+folder (doc id 1cjdms-GEUya8_NSADg752y9E1peMrqzLUOlPRnjMfWA). Once he blesses
+it, that doc is the encoding source for lib/expansions/kai-disciplines/.
