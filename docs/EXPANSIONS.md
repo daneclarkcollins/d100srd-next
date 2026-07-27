@@ -17,6 +17,19 @@ free, so "selling" later is a new row source, not a rewrite.
 
 ## Data model (Supabase)
 
+**TWO SEPARATE MECHANISMS (Dane, 2026-07-27):**
+
+1. **Ownership (account-level).** Whether a user HAS an expansion. Free
+   expansions are available to everyone automatically (beta starts with all
+   of them free); purchases come later as ownership rows. No toggle here —
+   owning ≠ using.
+2. **Enablement (PER CHARACTER, not per account).** Each character selects
+   which owned expansions it uses, because expansion content changes the
+   creation pipeline itself — Starborn adds new SKILLS, so a Starborn
+   character's skill step differs from a core character's. Chosen at
+   character creation (editable later with a warning), stored on the
+   character row.
+
 ```sql
 -- Catalog + availability. Admin-controlled.
 create table expansions (
@@ -24,16 +37,17 @@ create table expansions (
   name        text not null,
   description text,
   status      text not null default 'hidden',  -- hidden | beta | live
-  price_cents integer,                   -- null = free
+  price_cents integer,                   -- null = free (all beta expansions)
   created_at  timestamptz default now()
 );
 
--- Per-user unlock/enable. A future purchase is just source='purchase'.
+-- OWNERSHIP only (mechanism 1). Free expansions need no row — everyone has
+-- them while status is beta/live and price is null. A future purchase is a
+-- row with source='purchase'.
 create table user_expansions (
   user_id      uuid not null references auth.users(id) on delete cascade,
   expansion_id text not null references expansions(id),
-  enabled      boolean not null default true,
-  source       text not null default 'beta',   -- beta | purchase | grant
+  source       text not null default 'purchase',   -- purchase | grant
   created_at   timestamptz default now(),
   primary key (user_id, expansion_id)
 );
@@ -42,11 +56,16 @@ create table user_expansions (
 create table admins ( user_id uuid primary key references auth.users(id) );
 ```
 
-RLS sketch: everyone reads `expansions` where status != 'hidden'; users
-read/write their own `user_expansions` (insert allowed only while the
-expansion is free/beta — purchases go through the service role later); only
-`admins` members update `expansions`. Characters gain an `expansions text[]`
-column recording what they were built with.
+Mechanism 2 lives on the character: `characters.expansions text[]` — the
+expansions this character USES. The builder starts with an expansion picker
+(choose from what the account owns/what's free); every downstream step
+(skills, professions, archetypes, talents, Kai/mana) composes from that
+character's list, not from account state.
+
+RLS sketch: everyone reads `expansions` where status != 'hidden'; users read
+their own `user_expansions` (writes via service role at purchase time); only
+`admins` members update `expansions`. `characters.expansions` is covered by
+the characters table's existing RLS.
 
 ## Code architecture
 
@@ -58,9 +77,11 @@ column recording what they were built with.
 - `lib/expansions/registry.ts` — id → content map.
 - `lib/game-data/composed.ts` — `composeGameData(enabledIds)` pure merge of
   core + enabled expansions. Core arrays stay untouched.
-- `contexts/ExpansionContext.tsx` — loads the user's enabled expansions once;
-  `useGameData()` hook hands components the composed data. Tools/builders
-  consume through the hook instead of importing arrays directly.
+- `contexts/ExpansionContext.tsx` — loads what the account OWNS (mechanism 1)
+  for the builder's expansion picker. `useGameData(character.expansions)`
+  composes per-CHARACTER (mechanism 2) — the same account can have a core
+  character and a Starborn character side by side, each seeing different
+  skills/professions/archetypes in every tool.
 - Validators run with all expansions enabled (superset must stay coherent).
 
 Type change required: `Archetype` is currently the union
@@ -102,9 +123,10 @@ battle).
 ## Build order
 
 1. **Foundation** — migration (3 tables + characters.expansions), registry +
-   composed data layer + ExpansionContext, dashboard "Expansions" card
-   (self-serve toggle of beta expansions), `/admin/expansions` page
-   (admins-only: flip hidden/beta/live).
+   composed data layer + ExpansionContext, builder expansion picker (per
+   character — the enable mechanism), dashboard "Expansions" library card
+   (shows owned/available — the ownership mechanism), `/admin/expansions`
+   page (admins-only: flip hidden/beta/live).
 2. **Kai Disciplines** — content modules, Kai pool + label plumbing,
    archetype-as-data refactor, `any-weapon` choice group.
 3. **New Kai talents** — draft Weapon Dancer + Ninja trees for Mike's
